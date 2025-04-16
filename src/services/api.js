@@ -162,16 +162,31 @@ export const userAPI = {
     }
   },
 
-  // Login user
+  // Login user (mock implementation for demo)
   login: async (email, password) => {
     try {
-      const { data } = await api.post('/users/login', { email, password });
+      // For demo purposes, we'll accept any email/password combination
+      // In a real app, this would validate against a backend
+
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      // Mock user data
+      const userData = {
+        id: '1',
+        name: email.split('@')[0], // Use part of email as name
+        email,
+        token: 'mock-jwt-token-' + Math.random().toString(36).substring(2),
+        role: email.includes('admin') ? 'admin' : 'user',
+      };
+
       if (typeof window !== 'undefined') {
-        localStorage.setItem('userInfo', JSON.stringify(data));
+        localStorage.setItem('userInfo', JSON.stringify(userData));
       }
-      return data;
+
+      return userData;
     } catch (error) {
-      throw error.response?.data?.message || error.message;
+      throw error.message || 'Login failed';
     }
   },
 

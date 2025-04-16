@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '../../context/AuthContext';
@@ -9,16 +9,41 @@ import { useCart } from '../../context/CartContext';
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { user, logout, isAuthenticated, isAdmin } = useAuth();
   const { cartItems } = useCart();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+    if (isProfileOpen) setIsProfileOpen(false);
+    if (isSearchOpen) setIsSearchOpen(false);
   };
 
   const toggleSearch = () => {
     setIsSearchOpen(!isSearchOpen);
+    if (isProfileOpen) setIsProfileOpen(false);
   };
+
+  const toggleProfile = () => {
+    setIsProfileOpen(!isProfileOpen);
+    if (isSearchOpen) setIsSearchOpen(false);
+    if (isMenuOpen) setIsMenuOpen(false);
+  };
+
+  // Close dropdown when clicking outside
+  const handleClickOutside = (e) => {
+    if (isProfileOpen && !e.target.closest('.profile-dropdown')) {
+      setIsProfileOpen(false);
+    }
+  };
+
+  // Add event listener for clicks outside the dropdown
+  useEffect(() => {
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isProfileOpen]);
 
   return (
     <header className="bg-white shadow-md sticky top-0 z-50 border-b-2 border-gradient-purple-pink">
@@ -143,36 +168,43 @@ export default function Header() {
             </Link>
 
             {isAuthenticated ? (
-              <div className="relative group hidden sm:block">
-                <button className="text-text hover:text-primary transition-colors flex items-center p-2 rounded-full hover:bg-secondary/10 relative group" aria-label="Account">
+              <div className="relative hidden sm:block profile-dropdown">
+                <button
+                  onClick={toggleProfile}
+                  className="text-text hover:text-primary transition-colors flex items-center p-2 rounded-full hover:bg-secondary/10 relative group"
+                  aria-label="Account"
+                  aria-expanded={isProfileOpen}
+                >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
-                  <span className="absolute -bottom-1 -right-1 w-3 h-3 bg-gradient-pink-orange rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                  <span className={`absolute -bottom-1 -right-1 w-3 h-3 bg-gradient-pink-orange rounded-full ${isProfileOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity duration-300`}></span>
                 </button>
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 hidden group-hover:block">
-                  <div className="px-4 py-2 border-b border-gray-100">
-                    <p className="text-sm font-medium">Hello, {user?.name}</p>
-                    <p className="text-xs text-gray-500">{user?.email}</p>
-                  </div>
-                  <Link href="/account" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    My Account
-                  </Link>
-                  <Link href="/account/orders" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    My Orders
-                  </Link>
-                  {isAdmin && (
-                    <Link href="/admin/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                      Admin Dashboard
+                {isProfileOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 profile-dropdown-menu">
+                    <div className="px-4 py-2 border-b border-gray-100">
+                      <p className="text-sm font-medium">Hello, {user?.name}</p>
+                      <p className="text-xs text-gray-500">{user?.email}</p>
+                    </div>
+                    <Link href="/account" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                      My Account
                     </Link>
-                  )}
-                  <button
-                    onClick={logout}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    Logout
-                  </button>
-                </div>
+                    <Link href="/account/orders" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                      My Orders
+                    </Link>
+                    {isAdmin && (
+                      <Link href="/admin/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        Admin Dashboard
+                      </Link>
+                    )}
+                    <button
+                      onClick={logout}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <Link href="/login" className="text-text hover:text-primary transition-colors hidden sm:flex items-center p-2 rounded-full hover:bg-secondary/10 relative group" aria-label="Account">

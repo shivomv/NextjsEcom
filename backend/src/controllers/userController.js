@@ -48,6 +48,26 @@ exports.loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // Check if mock login is allowed for testing
+    if (process.env.ALLOW_MOCK_LOGIN === 'true' && process.env.NODE_ENV === 'development') {
+      console.log('Using mock login for testing');
+
+      // Create a mock user response
+      const mockUser = {
+        _id: '60d0fe4f5311236168a109ca',
+        name: email.split('@')[0], // Use part of email as name
+        email,
+        phone: '9876543210',
+        role: email.includes('admin') ? 'admin' : 'user',
+        token: jwt.sign({ id: '60d0fe4f5311236168a109ca' }, process.env.JWT_SECRET, {
+          expiresIn: process.env.JWT_EXPIRE,
+        }),
+      };
+
+      return res.json(mockUser);
+    }
+
+    // Regular login flow for production
     // Check for user
     const user = await User.findOne({ email }).select('+password');
 
