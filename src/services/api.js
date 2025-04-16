@@ -298,4 +298,150 @@ export const orderAPI = {
   },
 };
 
-export default api;
+// Cart API
+export const cartAPI = {
+  // Get user cart
+  getCart: async () => {
+    try {
+      // Check if user is authenticated
+      const userInfo = typeof window !== 'undefined' ? localStorage.getItem('userInfo') : null;
+
+      if (userInfo) {
+        // Authenticated user - use protected endpoint
+        try {
+          const { data } = await api.get('/cart');
+          return data;
+        } catch (error) {
+          console.error('Error fetching authenticated cart:', error);
+          // If there's an auth error, fall back to guest cart
+          const { data } = await api.get('/cart/guest');
+          return data;
+        }
+      } else {
+        // Guest user - use guest endpoint
+        const { data } = await api.get('/cart/guest');
+        return data;
+      }
+    } catch (error) {
+      console.error('Error in getCart:', error);
+      // Return empty cart as fallback
+      return { cartItems: [], totalPrice: 0, totalItems: 0 };
+    }
+  },
+
+  // Add item to cart
+  addToCart: async (productId, qty) => {
+    try {
+      // Check if user is authenticated
+      const userInfo = typeof window !== 'undefined' ? localStorage.getItem('userInfo') : null;
+
+      if (userInfo) {
+        // Authenticated user - use protected endpoint
+        try {
+          const { data } = await api.post('/cart', { productId, qty });
+          return data;
+        } catch (error) {
+          console.error('Error adding to authenticated cart:', error);
+          // Return success for guest users (will be handled by local storage)
+          return { success: true };
+        }
+      } else {
+        // Guest user - handled by local storage in CartContext
+        return { success: true };
+      }
+    } catch (error) {
+      console.error('Error in addToCart:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Update cart item quantity
+  updateCartItem: async (productId, qty) => {
+    try {
+      // Check if user is authenticated
+      const userInfo = typeof window !== 'undefined' ? localStorage.getItem('userInfo') : null;
+
+      if (userInfo) {
+        // Authenticated user - use protected endpoint
+        try {
+          const { data } = await api.put(`/cart/${productId}`, { qty });
+          return data;
+        } catch (error) {
+          console.error('Error updating authenticated cart:', error);
+          // Return success for guest users (will be handled by local storage)
+          return { success: true };
+        }
+      } else {
+        // Guest user - handled by local storage in CartContext
+        return { success: true };
+      }
+    } catch (error) {
+      console.error('Error in updateCartItem:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Remove item from cart
+  removeFromCart: async (productId) => {
+    try {
+      // Check if user is authenticated
+      const userInfo = typeof window !== 'undefined' ? localStorage.getItem('userInfo') : null;
+
+      if (userInfo) {
+        // Authenticated user - use protected endpoint
+        try {
+          const { data } = await api.delete(`/cart/${productId}`);
+          return data;
+        } catch (error) {
+          console.error('Error removing from authenticated cart:', error);
+          // Return success for guest users (will be handled by local storage)
+          return { success: true };
+        }
+      } else {
+        // Guest user - handled by local storage in CartContext
+        return { success: true };
+      }
+    } catch (error) {
+      console.error('Error in removeFromCart:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Clear cart
+  clearCart: async () => {
+    try {
+      // Check if user is authenticated
+      const userInfo = typeof window !== 'undefined' ? localStorage.getItem('userInfo') : null;
+
+      if (userInfo) {
+        // Authenticated user - use protected endpoint
+        try {
+          const { data } = await api.delete('/cart');
+          return data;
+        } catch (error) {
+          console.error('Error clearing authenticated cart:', error);
+          // Return success for guest users (will be handled by local storage)
+          return { success: true };
+        }
+      } else {
+        // Guest user - handled by local storage in CartContext
+        return { success: true };
+      }
+    } catch (error) {
+      console.error('Error in clearCart:', error);
+      return { success: false, error: error.message };
+    }
+  },
+};
+
+// Export the API instance with all endpoints
+const apiService = {
+  ...api,
+  products: productAPI,
+  categories: categoryAPI,
+  users: userAPI,
+  orders: orderAPI,
+  cart: cartAPI,
+};
+
+export default apiService;

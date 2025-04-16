@@ -8,72 +8,108 @@ import { useAuth } from '../../context/AuthContext';
 import Breadcrumb from '../../components/common/Breadcrumb';
 
 export default function CartPage() {
-  const { cartItems, addToCart, removeFromCart } = useCart();
+  const { cartItems, addToCart, removeFromCart, loading } = useCart();
   const { isAuthenticated } = useAuth();
   const [cartTotal, setCartTotal] = useState(0);
   const [shippingCost, setShippingCost] = useState(0);
   const [tax, setTax] = useState(0);
-  
+
   // Calculate totals whenever cart items change
   useEffect(() => {
-    const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.qty, 0);
-    
+    // Safely calculate subtotal with validation
+    const subtotal = cartItems.reduce((acc, item) => {
+      // Ensure price and qty are valid numbers
+      const price = typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0;
+      const qty = typeof item.qty === 'number' ? item.qty : parseInt(item.qty) || 1;
+      return acc + price * qty;
+    }, 0);
+
     // Calculate shipping (free over ₹500)
     const shipping = subtotal > 500 ? 0 : 50;
-    
+
     // Calculate tax (5% GST)
     const taxAmount = subtotal * 0.05;
-    
+
     setCartTotal(subtotal);
     setShippingCost(shipping);
     setTax(taxAmount);
   }, [cartItems]);
-  
+
   // Format price with Indian Rupee symbol
   const formatPrice = (price) => {
-    return `₹${price.toFixed(2)}`;
+    // Handle undefined, null, or NaN values
+    if (price === undefined || price === null || isNaN(price)) {
+      return '₹0.00';
+    }
+    return `₹${Number(price).toFixed(2)}`;
   };
-  
+
   // Handle quantity change
   const handleQuantityChange = (item, qty) => {
-    if (qty > 0 && qty <= item.stock) {
-      addToCart({ ...item, _id: item.product }, qty);
+    // Validate item and qty
+    if (!item || !item.product) {
+      console.error('Invalid item:', item);
+      return;
+    }
+
+    // Ensure stock is a valid number
+    const stock = typeof item.stock === 'number' ? item.stock : parseInt(item.stock) || 10;
+
+    // Ensure qty is within valid range
+    if (qty > 0 && qty <= stock) {
+      addToCart({
+        ...item,
+        _id: item.product,
+        // Ensure price is a number
+        price: typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0,
+      }, qty);
     }
   };
-  
+
   // Breadcrumb items
   const breadcrumbItems = [
     { label: 'Home', href: '/' },
     { label: 'Cart', href: '/cart', active: true },
   ];
-  
+
   return (
     <div className="bg-background">
       <div className="container mx-auto px-4 py-8">
         <Breadcrumb items={breadcrumbItems} />
-        
-        <h1 className="text-2xl md:text-3xl font-bold mb-6">Shopping Cart</h1>
-        
+
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold">Shopping Cart</h1>
+          {loading && (
+            <div className="flex items-center text-primary">
+              <svg className="animate-spin -ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>Updating cart...</span>
+            </div>
+          )}
+        </div>
+
         {cartItems.length === 0 ? (
           <div className="bg-white rounded-lg shadow-md p-6 text-center">
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              className="h-16 w-16 mx-auto text-gray-400 mb-4" 
-              fill="none" 
-              viewBox="0 0 24 24" 
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-16 w-16 mx-auto text-gray-400 mb-4"
+              fill="none"
+              viewBox="0 0 24 24"
               stroke="currentColor"
             >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth={2} 
-                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" 
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
               />
             </svg>
             <h2 className="text-xl font-semibold mb-2">Your cart is empty</h2>
             <p className="text-gray-600 mb-4">Looks like you haven't added any products to your cart yet.</p>
-            <Link 
-              href="/products" 
+            <Link
+              href="/products"
               className="bg-primary text-white px-6 py-3 rounded-md hover:bg-primary-dark transition-colors inline-block"
             >
               Continue Shopping
@@ -87,7 +123,7 @@ export default function CartPage() {
                 <div className="p-4 border-b border-gray-200">
                   <h2 className="text-lg font-semibold">Cart Items ({cartItems.length})</h2>
                 </div>
-                
+
                 <div className="divide-y divide-gray-200">
                   {cartItems.map((item) => (
                     <div key={item.product} className="p-4 flex flex-col sm:flex-row">
@@ -95,8 +131,8 @@ export default function CartPage() {
                       <div className="sm:w-24 h-24 flex-shrink-0 bg-gray-100 rounded-md overflow-hidden mb-4 sm:mb-0">
                         {item.image ? (
                           <div className="relative w-full h-full">
-                            <Image 
-                              src={item.image} 
+                            <Image
+                              src={item.image}
                               alt={item.name}
                               fill
                               sizes="96px"
@@ -109,7 +145,7 @@ export default function CartPage() {
                           </div>
                         )}
                       </div>
-                      
+
                       {/* Product Details */}
                       <div className="sm:ml-4 flex-grow">
                         <div className="flex flex-col sm:flex-row sm:justify-between">
@@ -126,7 +162,7 @@ export default function CartPage() {
                             <p className="text-sm text-gray-600">{formatPrice(item.price)} each</p>
                           </div>
                         </div>
-                        
+
                         <div className="mt-4 flex flex-col sm:flex-row sm:justify-between sm:items-center">
                           {/* Quantity Selector */}
                           <div className="flex items-center">
@@ -148,24 +184,24 @@ export default function CartPage() {
                               +
                             </button>
                           </div>
-                          
+
                           {/* Remove Button */}
                           <button
                             onClick={() => removeFromCart(item.product)}
                             className="mt-2 sm:mt-0 text-red-600 hover:text-red-800 text-sm flex items-center"
                           >
-                            <svg 
-                              xmlns="http://www.w3.org/2000/svg" 
-                              className="h-4 w-4 mr-1" 
-                              fill="none" 
-                              viewBox="0 0 24 24" 
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 mr-1"
+                              fill="none"
+                              viewBox="0 0 24 24"
                               stroke="currentColor"
                             >
-                              <path 
-                                strokeLinecap="round" 
-                                strokeLinejoin="round" 
-                                strokeWidth={2} 
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" 
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                               />
                             </svg>
                             Remove
@@ -176,45 +212,45 @@ export default function CartPage() {
                   ))}
                 </div>
               </div>
-              
+
               {/* Continue Shopping */}
               <div className="mt-6">
-                <Link 
-                  href="/products" 
+                <Link
+                  href="/products"
                   className="text-primary hover:text-primary-dark flex items-center"
                 >
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    className="h-5 w-5 mr-1" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 mr-1"
+                    fill="none"
+                    viewBox="0 0 24 24"
                     stroke="currentColor"
                   >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M10 19l-7-7m0 0l7-7m-7 7h18" 
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M10 19l-7-7m0 0l7-7m-7 7h18"
                     />
                   </svg>
                   Continue Shopping
                 </Link>
               </div>
             </div>
-            
+
             {/* Order Summary */}
             <div className="lg:w-1/3">
               <div className="bg-white rounded-lg shadow-md overflow-hidden">
                 <div className="p-4 border-b border-gray-200">
                   <h2 className="text-lg font-semibold">Order Summary</h2>
                 </div>
-                
+
                 <div className="p-4 space-y-4">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Subtotal</span>
                     <span className="font-medium">{formatPrice(cartTotal)}</span>
                   </div>
-                  
+
                   <div className="flex justify-between">
                     <span className="text-gray-600">Shipping</span>
                     {shippingCost === 0 ? (
@@ -223,17 +259,17 @@ export default function CartPage() {
                       <span className="font-medium">{formatPrice(shippingCost)}</span>
                     )}
                   </div>
-                  
+
                   <div className="flex justify-between">
                     <span className="text-gray-600">Tax (GST 5%)</span>
                     <span className="font-medium">{formatPrice(tax)}</span>
                   </div>
-                  
+
                   <div className="border-t border-gray-200 pt-4 flex justify-between">
                     <span className="font-bold">Total</span>
                     <span className="font-bold text-lg">{formatPrice(cartTotal + shippingCost + tax)}</span>
                   </div>
-                  
+
                   {/* Checkout Button */}
                   <Link
                     href={isAuthenticated ? "/checkout" : "/login?redirect=checkout"}
@@ -241,14 +277,14 @@ export default function CartPage() {
                   >
                     {isAuthenticated ? 'Proceed to Checkout' : 'Login to Checkout'}
                   </Link>
-                  
+
                   {/* Free Shipping Notice */}
                   {cartTotal < 500 && (
                     <div className="mt-4 bg-blue-50 text-blue-700 p-3 rounded-md text-sm">
                       <p>Add {formatPrice(500 - cartTotal)} more to qualify for FREE shipping!</p>
                     </div>
                   )}
-                  
+
                   {/* Payment Methods */}
                   <div className="mt-6">
                     <p className="text-sm text-gray-600 mb-2">We Accept:</p>
