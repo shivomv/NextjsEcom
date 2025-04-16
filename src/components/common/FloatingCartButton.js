@@ -14,7 +14,7 @@ export default function FloatingCartButton() {
   return (
     <Link
       href="/cart"
-      className="fixed bottom-6 right-6 bg-gradient-purple-pink hover:opacity-90 text-white rounded-full p-4 shadow-lg z-40 transition-all duration-300 transform hover:scale-110 md:hidden border-2 border-white backdrop-blur-none"
+      className="fixed bottom-[calc(16px+4rem)] left-4 bg-gradient-purple-pink hover:opacity-90 text-white rounded-full p-4 shadow-lg z-40 transition-all duration-300 transform hover:scale-110 md:hidden border-2 border-white backdrop-blur-none"
       aria-label="View Cart"
     >
       <div className="relative">
