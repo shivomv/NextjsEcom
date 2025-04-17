@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect } from 'react';
-import { userAPI } from '../services/api';
+import { userAPI } from '@/services/api';
 
 // Create context
 const AuthContext = createContext();
@@ -12,17 +12,41 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Load user from localStorage on initial render
+  // Load user from localStorage on initial render and verify token
   useEffect(() => {
-    const userInfo = localStorage.getItem('userInfo')
-      ? JSON.parse(localStorage.getItem('userInfo'))
-      : null;
+    const loadUser = async () => {
+      try {
+        const userInfo = localStorage.getItem('userInfo')
+          ? JSON.parse(localStorage.getItem('userInfo'))
+          : null;
 
-    if (userInfo) {
-      setUser(userInfo);
-    }
+        if (userInfo && userInfo.token) {
+          // Set user from localStorage initially
+          setUser(userInfo);
 
-    setLoading(false);
+          try {
+            // Verify token validity by fetching user profile
+            const userData = await userAPI.getProfile();
+            // Update user data with fresh data from server
+            setUser(prevUser => ({ ...prevUser, ...userData }));
+          } catch (error) {
+            // If token is invalid, clear user data
+            console.error('Token validation failed:', error);
+            userAPI.logout();
+            setUser(null);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading user:', error);
+        // Clear potentially corrupted data
+        localStorage.removeItem('userInfo');
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUser();
   }, []);
 
   // Register user
@@ -30,7 +54,18 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
+
+      // Validate input
+      if (!name || !email || !password) {
+        const error = new Error('Name, email and password are required');
+        setError(error);
+        throw error;
+      }
+
+      // Call API to register user
       const data = await userAPI.register({ name, email, password, phone });
+
+      // Update user state with returned data
       setUser(data);
       return data;
     } catch (error) {
@@ -46,7 +81,18 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
+
+      // Validate input
+      if (!email || !password) {
+        const error = new Error('Email and password are required');
+        setError(error);
+        throw error;
+      }
+
+      // Call API to login user
       const data = await userAPI.login(email, password);
+
+      // Update user state with returned data
       setUser(data);
       return data;
     } catch (error) {
@@ -58,9 +104,16 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Logout user
-  const logout = () => {
-    userAPI.logout();
-    setUser(null);
+  const logout = async () => {
+    try {
+      setLoading(true);
+      await userAPI.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setUser(null);
+      setLoading(false);
+    }
   };
 
   // Update user profile

@@ -2,7 +2,7 @@
 
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_URL = '/api';
 
 // Create axios instance
 const api = axios.create({
@@ -18,15 +18,51 @@ api.interceptors.request.use(
     if (typeof window !== 'undefined') {
       const userInfo = localStorage.getItem('userInfo');
       if (userInfo) {
-        const { token } = JSON.parse(userInfo);
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
+        try {
+          const parsedUserInfo = JSON.parse(userInfo);
+          const token = parsedUserInfo.token;
+          if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+          }
+        } catch (error) {
+          console.error('Error parsing user info from localStorage:', error);
+          // Remove invalid user info
+          localStorage.removeItem('userInfo');
         }
       }
     }
     return config;
   },
   (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Add a response interceptor to handle auth errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Handle 401 Unauthorized errors
+    if (error.response && error.response.status === 401) {
+      console.warn('Authentication error:', error.response.data);
+
+      // If we're not on the login page, clear auth and redirect
+      if (typeof window !== 'undefined' &&
+          !window.location.pathname.includes('/login') &&
+          !window.location.pathname.includes('/register')) {
+
+        // Clear user data on auth error
+        localStorage.removeItem('userInfo');
+
+        // Only redirect if it's a token validation error, not a login attempt
+        const isLoginAttempt = error.config.url.includes('/login') || error.config.url.includes('/register');
+        if (!isLoginAttempt) {
+          // Redirect to login page with return URL
+          const returnUrl = encodeURIComponent(window.location.pathname);
+          window.location.href = `/login?redirect=${returnUrl}`;
+        }
+      }
+    }
     return Promise.reject(error);
   }
 );
@@ -152,48 +188,51 @@ export const userAPI = {
   // Register user
   register: async (userData) => {
     try {
-      const { data } = await api.post('/users', userData);
-      if (typeof window !== 'undefined') {
+      const { data } = await api.post('/users/register', userData);
+
+      // Store user data in localStorage
+      if (typeof window !== 'undefined' && data.token) {
         localStorage.setItem('userInfo', JSON.stringify(data));
       }
+
       return data;
     } catch (error) {
-      throw error.response?.data?.message || error.message;
+      throw error.response?.data?.message || error.message || 'Registration failed';
     }
   },
 
-  // Login user (mock implementation for demo)
+  // Login user with real backend
   login: async (email, password) => {
     try {
-      // For demo purposes, we'll accept any email/password combination
-      // In a real app, this would validate against a backend
-
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-
-      // Mock user data
-      const userData = {
-        id: '1',
-        name: email.split('@')[0], // Use part of email as name
-        email,
-        token: 'mock-jwt-token-' + Math.random().toString(36).substring(2),
-        role: email.includes('admin') ? 'admin' : 'user',
-      };
-
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('userInfo', JSON.stringify(userData));
+      if (!email || !password) {
+        throw new Error('Email and password are required');
       }
 
-      return userData;
+      const { data } = await api.post('/users/login', { email, password });
+
+      // Store user data in localStorage
+      if (typeof window !== 'undefined' && data.token) {
+        localStorage.setItem('userInfo', JSON.stringify(data));
+      }
+
+      return data;
     } catch (error) {
-      throw error.message || 'Login failed';
+      throw error.response?.data?.message || error.message || 'Login failed';
     }
   },
 
   // Logout user
-  logout: () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('userInfo');
+  logout: async () => {
+    try {
+      // Call logout endpoint to invalidate token on server (if implemented)
+      await api.post('/users/logout');
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      // Always remove from localStorage even if server request fails
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('userInfo');
+      }
     }
   },
 
@@ -310,17 +349,15 @@ export const cartAPI = {
         // Authenticated user - use protected endpoint
         try {
           const { data } = await api.get('/cart');
-          return data;
+          return { data };
         } catch (error) {
           console.error('Error fetching authenticated cart:', error);
           // If there's an auth error, fall back to guest cart
-          const { data } = await api.get('/cart/guest');
-          return data;
+          return { data: { cartItems: [], totalPrice: 0, totalItems: 0 } };
         }
       } else {
-        // Guest user - use guest endpoint
-        const { data } = await api.get('/cart/guest');
-        return data;
+        // Guest user - return empty cart data
+        return { data: { cartItems: [], totalPrice: 0, totalItems: 0 } };
       }
     } catch (error) {
       console.error('Error in getCart:', error);

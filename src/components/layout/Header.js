@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { useAuth } from '../../context/AuthContext';
-import { useCart } from '../../context/CartContext';
+import { useAuth } from '@/context/AuthContext';
+import { useCart } from '@/context/CartContext';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -31,11 +30,11 @@ export default function Header() {
   };
 
   // Close dropdown when clicking outside
-  const handleClickOutside = (e) => {
+  const handleClickOutside = useCallback((e) => {
     if (isProfileOpen && !e.target.closest('.profile-dropdown')) {
       setIsProfileOpen(false);
     }
-  };
+  }, [isProfileOpen]);
 
   // Add event listener for clicks outside the dropdown
   useEffect(() => {
@@ -43,7 +42,7 @@ export default function Header() {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isProfileOpen]);
+  }, [handleClickOutside]);
 
   return (
     <header className="bg-white shadow-md sticky top-0 z-50 border-b-2 border-gradient-purple-pink">
@@ -207,7 +206,7 @@ export default function Header() {
                 )}
               </div>
             ) : (
-              <Link href="/login" className="text-text hover:text-primary transition-colors hidden sm:flex items-center p-2 rounded-full hover:bg-secondary/10 relative group" aria-label="Account">
+              <Link href={`/login?redirect=${typeof window !== 'undefined' ? window.location.pathname : '/'}`} className="text-text hover:text-primary transition-colors hidden sm:flex items-center p-2 rounded-full hover:bg-secondary/10 relative group" aria-label="Account">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
@@ -370,7 +369,7 @@ export default function Header() {
                 </button>
               </>
             ) : (
-              <Link href="/login" className="py-4 text-text hover:text-primary transition-colors text-lg border-b border-gray-100 flex items-center">
+              <Link href={`/login?redirect=${typeof window !== 'undefined' ? window.location.pathname : '/'}`} className="py-4 text-text hover:text-primary transition-colors text-lg border-b border-gray-100 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                 </svg>

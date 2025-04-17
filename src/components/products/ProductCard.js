@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useCart } from '../../context/CartContext';
+import { useCart } from '@/context/CartContext';
 
 export default function ProductCard({ product }) {
   const { addToCart } = useCart();
@@ -25,7 +25,7 @@ export default function ProductCard({ product }) {
   };
 
   return (
-    <div className="bg-background-paper rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 border border-primary/10 hover:border-primary/30">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 border border-primary/10 hover:border-primary/30">
       <Link href={`/products/${product.slug}`} className="block relative h-48 sm:h-56 overflow-hidden">
         {product.images && product.images.length > 0 ? (
           <div className="relative w-full h-full">
@@ -113,9 +113,9 @@ export default function ProductCard({ product }) {
               product.stock <= 0
                 ? 'bg-gray-300 cursor-not-allowed'
                 : isAddingToCart
-                  ? 'bg-success'
-                  : 'bg-gradient-purple-pink hover:opacity-90'
-            } text-white px-4 py-2.5 rounded-md transition-colors text-base font-medium flex items-center justify-center w-full sm:w-auto shadow-sm hover:shadow border border-white/20`}
+                  ? 'bg-gradient-pink-orange'
+                  : 'bg-gradient-pink-orange hover:bg-secondary'
+            } text-white px-4 py-2.5 rounded-md transition-all duration-300 text-base font-medium flex items-center justify-center w-full sm:w-auto shadow-md hover:shadow-lg border border-white/20 transform hover:-translate-y-0.5`}
           >
             {product.stock <= 0 ? (
               'Out of Stock'
