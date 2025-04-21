@@ -319,7 +319,7 @@ export default function CategoryPage({ params }) {
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-purple-900/80 to-pink-800/80 z-10"></div>
-        <div className="relative h-[40vh] min-h-[300px] max-h-[400px] w-full">
+        <div className="relative h-[8vh] min-h-[100px] sm:min-h-[120px] md:min-h-[150px] max-h-[100px] sm:max-h-[120px] md:max-h-[150px] w-full">
           <ImageWithFallback
             src={displayCategory.image}
             alt={displayCategory.name}
@@ -328,10 +328,10 @@ export default function CategoryPage({ params }) {
             className="object-cover"
           />
           <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center p-4">
-            <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 drop-shadow-lg">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 sm:mb-3 drop-shadow-lg">
               {displayCategory.name}
             </h1>
-            <p className="text-white/90 text-lg max-w-2xl mx-auto drop-shadow">
+            <p className="text-white/90 text-sm sm:text-base md:text-lg max-w-2xl mx-auto drop-shadow">
               {displayCategory.description}
             </p>
           </div>
@@ -339,7 +339,7 @@ export default function CategoryPage({ params }) {
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-3 py-6 sm:py-8 md:py-10">
         {/* Filters and Sorting */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div className="flex flex-wrap gap-2">
