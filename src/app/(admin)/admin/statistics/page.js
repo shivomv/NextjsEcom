@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
@@ -50,9 +50,9 @@ export default function StatisticsPage() {
     }
 
     fetchStatisticsData();
-  }, [isAuthenticated, isAdmin, router, timeRange]);
+  }, [isAuthenticated, isAdmin, router, timeRange, fetchStatisticsData]);
 
-  const fetchStatisticsData = async () => {
+  const fetchStatisticsData = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -137,7 +137,7 @@ export default function StatisticsPage() {
       console.error('Error fetching statistics data:', error);
       setLoading(false);
     }
-  };
+  }, [user, timeRange]);
 
   const handleTimeRangeChange = (range) => {
     setTimeRange(range);
@@ -245,7 +245,7 @@ export default function StatisticsPage() {
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-lg font-semibold text-gray-900">Orders Statistics</h2>
             </div>
-            
+
             {/* Orders Summary Cards */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 p-6">
               <div className="bg-gray-50 rounded-lg p-4">
@@ -273,7 +273,7 @@ export default function StatisticsPage() {
                 <p className="text-2xl font-semibold text-red-900">{stats.orders.cancelled}</p>
               </div>
             </div>
-            
+
             {/* Orders by Date Table */}
             <div className="p-6">
               <h3 className="text-md font-semibold text-gray-900 mb-4">Orders by Date</h3>
@@ -333,7 +333,7 @@ export default function StatisticsPage() {
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-lg font-semibold text-gray-900">Products Statistics</h2>
             </div>
-            
+
             {/* Products Summary Cards */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 p-6">
               <div className="bg-gray-50 rounded-lg p-4">
@@ -357,7 +357,7 @@ export default function StatisticsPage() {
                 <p className="text-2xl font-semibold text-purple-900">{stats.products.featured}</p>
               </div>
             </div>
-            
+
             {/* Products by Category Table */}
             <div className="p-6">
               <h3 className="text-md font-semibold text-gray-900 mb-4">Products by Category</h3>
@@ -417,7 +417,7 @@ export default function StatisticsPage() {
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-lg font-semibold text-gray-900">Customers Statistics</h2>
             </div>
-            
+
             {/* Customers Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6">
               <div className="bg-gray-50 rounded-lg p-4">
@@ -433,7 +433,7 @@ export default function StatisticsPage() {
                 <p className="text-2xl font-semibold text-blue-900">{stats.customers.returning}</p>
               </div>
             </div>
-            
+
             {/* Customers by Location Table */}
             <div className="p-6">
               <h3 className="text-md font-semibold text-gray-900 mb-4">Customers by Location</h3>
@@ -487,7 +487,7 @@ export default function StatisticsPage() {
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-lg font-semibold text-gray-900">Revenue Statistics</h2>
             </div>
-            
+
             {/* Revenue Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6">
               <div className="bg-gray-50 rounded-lg p-4">
@@ -496,13 +496,13 @@ export default function StatisticsPage() {
               </div>
               <div className="bg-green-50 rounded-lg p-4">
                 <h3 className="text-sm font-medium text-green-700">
-                  {timeRange === 'week' ? 'Last 7 Days' : 
+                  {timeRange === 'week' ? 'Last 7 Days' :
                    timeRange === 'month' ? 'Last 30 Days' : 'Last 12 Months'} Revenue
                 </h3>
                 <p className="text-2xl font-semibold text-green-900">₹{stats.revenue.period.toLocaleString()}</p>
               </div>
             </div>
-            
+
             {/* Revenue by Date Table */}
             <div className="p-6">
               <h3 className="text-md font-semibold text-gray-900 mb-4">Revenue by Date</h3>
@@ -553,7 +553,7 @@ export default function StatisticsPage() {
                 </table>
               </div>
             </div>
-            
+
             {/* Revenue by Payment Method Table */}
             <div className="p-6">
               <h3 className="text-md font-semibold text-gray-900 mb-4">Revenue by Payment Method</h3>

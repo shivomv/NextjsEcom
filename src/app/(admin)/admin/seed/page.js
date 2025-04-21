@@ -70,7 +70,7 @@ export default function SeedPage() {
         <div className="mb-6">
           <p className="text-gray-700 mb-4">
             This tool will seed the database with initial data for categories, products, and other entities.
-            It will only add data if it doesn't already exist.
+            It will only add data if it does not already exist.
           </p>
           <p className="text-yellow-600 font-medium">
             Note: This should only be used in development environments.

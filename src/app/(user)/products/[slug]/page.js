@@ -29,14 +29,15 @@ export default function ProductDetailPage() {
         setLoading(true);
         setError(null);
 
-        const productData = await productAPI.getProductBySlug(slug);
-        setProduct(productData);
-
-        // Redirect to ID-based URL if we're on a slug-based URL
-        if (productData._id && !slug.match(/^[0-9a-fA-F]{24}$/)) {
-          window.location.href = `/products/${productData._id}`;
-          return;
+        let productData;
+        // Check if slug is a MongoDB ObjectId (24 hex characters)
+        if (slug.match(/^[0-9a-fA-F]{24}$/)) {
+          productData = await productAPI.getProductById(slug);
+        } else {
+          productData = await productAPI.getProductBySlug(slug);
         }
+
+        setProduct(productData);
 
         // Fetch related products
         if (productData._id) {

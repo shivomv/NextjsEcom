@@ -381,7 +381,7 @@ export default function OrderDetailPage({ params }) {
                 </svg>
               </div>
               <h1 className="text-2xl font-bold text-gray-900 mb-4">Order Not Found</h1>
-              <p className="text-gray-600 mb-6">We couldn't find the order you're looking for.</p>
+              <p className="text-gray-600 mb-6">We could not find the order you are looking for.</p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
                   href="/account/orders"

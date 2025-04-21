@@ -12,7 +12,7 @@ export default function OrderNotFound() {
               </svg>
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Order Not Found</h1>
-            <p className="text-gray-600 mb-6">The order you are looking for does not exist or you don't have permission to view it.</p>
+            <p className="text-gray-600 mb-6">The order you are looking for does not exist or you do not have permission to view it.</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/account/orders"
