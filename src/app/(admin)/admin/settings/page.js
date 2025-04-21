@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import CloudinaryImagePicker from '@/components/common/CloudinaryImagePicker';
 import { useAuth } from '@/context/AuthContext';
 
 export default function SettingsPage() {
@@ -14,6 +16,7 @@ export default function SettingsPage() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [isClient, setIsClient] = useState(false);
+  const [activeTab, setActiveTab] = useState('general');
 
   // Settings state
   const [settings, setSettings] = useState({
@@ -45,13 +48,34 @@ export default function SettingsPage() {
     maintenanceMode: false,
   });
 
+  // Web pages state
+  const [webPages, setWebPages] = useState([]);
+
+  // Banners state
+  const [banners, setBanners] = useState([]);
+
+  // Delivery agencies state
+  const [deliveryAgencies, setDeliveryAgencies] = useState([]);
+
+  // Payment gateways state
+  const [paymentGateways, setPaymentGateways] = useState([]);
+
+  // Cloudinary settings
+  const [cloudinarySettings, setCloudinarySettings] = useState({
+    cloudName: '',
+    apiKey: '',
+    apiSecret: '',
+    uploadPreset: '',
+    folder: 'my-shop'
+  });
+
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // Fetch settings
+  // Fetch settings and other data
   useEffect(() => {
-    const fetchSettings = async () => {
+    const fetchData = async () => {
       if (!isAuthenticated || !user) return;
 
       try {
@@ -66,6 +90,41 @@ export default function SettingsPage() {
         // In a real app, you would set the settings from the API response
         // setSettings(data);
 
+        // Mock data for web pages
+        setWebPages([
+          { id: '1', title: 'About Us', slug: 'about-us', isActive: true, showInFooter: true, showInHeader: false },
+          { id: '2', title: 'Contact Us', slug: 'contact-us', isActive: true, showInFooter: true, showInHeader: false },
+          { id: '3', title: 'Terms & Conditions', slug: 'terms-conditions', isActive: true, showInFooter: true, showInHeader: false },
+          { id: '4', title: 'Privacy Policy', slug: 'privacy-policy', isActive: true, showInFooter: true, showInHeader: false },
+        ]);
+
+        // Mock data for banners
+        setBanners([
+          { id: '1', title: 'Home Banner 1', position: 'home_hero', isActive: true, image: 'https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg' },
+          { id: '2', title: 'Festival Special', position: 'home_middle', isActive: true, image: 'https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg' },
+        ]);
+
+        // Mock data for delivery agencies
+        setDeliveryAgencies([
+          { id: '1', name: 'Express Delivery', code: 'express', isActive: true, trackingUrl: 'https://express-delivery.com/track/{trackingId}' },
+          { id: '2', name: 'Standard Post', code: 'post', isActive: true, trackingUrl: 'https://standard-post.com/track/{trackingId}' },
+        ]);
+
+        // Mock data for payment gateways
+        setPaymentGateways([
+          { id: '1', name: 'Razorpay', code: 'razorpay', isActive: true, isDefault: true },
+          { id: '2', name: 'Cash on Delivery', code: 'cod', isActive: true, isDefault: false },
+        ]);
+
+        // Mock data for cloudinary settings
+        setCloudinarySettings({
+          cloudName: 'your-cloud-name',
+          apiKey: 'your-api-key',
+          apiSecret: '••••••••••••••••',
+          uploadPreset: 'my-shop-preset',
+          folder: 'my-shop'
+        });
+
         setIsLoading(false);
       } catch (error) {
         console.error('Error fetching settings:', error);
@@ -75,7 +134,7 @@ export default function SettingsPage() {
     };
 
     if (isAuthenticated && user) {
-      fetchSettings();
+      fetchData();
     }
   }, [isAuthenticated, user]);
 
@@ -175,6 +234,82 @@ export default function SettingsPage() {
           {success}
         </div>
       )}
+
+      {/* Tab Navigation */}
+      <div className="mb-6 border-b border-gray-200">
+        <nav className="flex -mb-px">
+          <button
+            onClick={() => setActiveTab('general')}
+            className={`py-4 px-6 text-sm font-medium ${
+              activeTab === 'general'
+                ? 'border-b-2 border-primary text-primary'
+                : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            General
+          </button>
+          <button
+            onClick={() => setActiveTab('webpages')}
+            className={`py-4 px-6 text-sm font-medium ${
+              activeTab === 'webpages'
+                ? 'border-b-2 border-primary text-primary'
+                : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Web Pages
+          </button>
+          <button
+            onClick={() => setActiveTab('banners')}
+            className={`py-4 px-6 text-sm font-medium ${
+              activeTab === 'banners'
+                ? 'border-b-2 border-primary text-primary'
+                : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Banners
+          </button>
+          <button
+            onClick={() => setActiveTab('social')}
+            className={`py-4 px-6 text-sm font-medium ${
+              activeTab === 'social'
+                ? 'border-b-2 border-primary text-primary'
+                : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Social Media
+          </button>
+          <button
+            onClick={() => setActiveTab('delivery')}
+            className={`py-4 px-6 text-sm font-medium ${
+              activeTab === 'delivery'
+                ? 'border-b-2 border-primary text-primary'
+                : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Delivery Agencies
+          </button>
+          <button
+            onClick={() => setActiveTab('payment')}
+            className={`py-4 px-6 text-sm font-medium ${
+              activeTab === 'payment'
+                ? 'border-b-2 border-primary text-primary'
+                : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Payment Gateways
+          </button>
+          <button
+            onClick={() => setActiveTab('cloudinary')}
+            className={`py-4 px-6 text-sm font-medium ${
+              activeTab === 'cloudinary'
+                ? 'border-b-2 border-primary text-primary'
+                : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Cloudinary
+          </button>
+        </nav>
+      </div>
 
       {isLoading ? (
         <div className="flex justify-center items-center p-12">

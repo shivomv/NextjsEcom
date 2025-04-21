@@ -20,25 +20,28 @@ export default function ProductsPage() {
     pages: 1,
     count: 0,
   });
-  
+
   // Filter states
   const [selectedCategory, setSelectedCategory] = useState('');
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
   const [sortOption, setSortOption] = useState('newest');
   const [searchTerm, setSearchTerm] = useState('');
-  
+  const [isFeatured, setIsFeatured] = useState(false);
+
   // Get query parameters
   const categorySlug = searchParams.get('category') || '';
   const keyword = searchParams.get('keyword') || '';
   const page = parseInt(searchParams.get('page')) || 1;
   const sort = searchParams.get('sort') || 'newest';
-  
+  const featured = searchParams.get('featured') === 'true';
+
   useEffect(() => {
     // Set initial filter states from URL params
     setSelectedCategory(categorySlug);
     setSearchTerm(keyword);
     setSortOption(sort);
-    
+    setIsFeatured(featured);
+
     // Fetch categories
     const fetchCategories = async () => {
       try {
@@ -48,38 +51,42 @@ export default function ProductsPage() {
         console.error('Error fetching categories:', error);
       }
     };
-    
+
     fetchCategories();
-  }, [categorySlug, keyword, sort]);
-  
+  }, [categorySlug, keyword, sort, featured]);
+
   useEffect(() => {
     // Fetch products based on filters
     const fetchProducts = async () => {
       try {
         setLoading(true);
         setError(null);
-        
+
         const params = {
           page,
           sort: sortOption,
         };
-        
+
         if (selectedCategory) {
           params.category = selectedCategory;
         }
-        
+
         if (searchTerm) {
           params.keyword = searchTerm;
         }
-        
+
         if (priceRange.min) {
           params.minPrice = priceRange.min;
         }
-        
+
         if (priceRange.max) {
           params.maxPrice = priceRange.max;
         }
-        
+
+        if (isFeatured) {
+          params.featured = true;
+        }
+
         const data = await productAPI.getProducts(params);
         setProducts(data.products);
         setPagination({
@@ -94,33 +101,33 @@ export default function ProductsPage() {
         setLoading(false);
       }
     };
-    
+
     fetchProducts();
-  }, [page, selectedCategory, sortOption, searchTerm, priceRange]);
-  
+  }, [page, selectedCategory, sortOption, searchTerm, priceRange, isFeatured]);
+
   // Handle filter changes
   const handleCategoryChange = (category) => {
     setSelectedCategory(category);
   };
-  
+
   const handlePriceRangeChange = (min, max) => {
     setPriceRange({ min, max });
   };
-  
+
   const handleSortChange = (sort) => {
     setSortOption(sort);
   };
-  
+
   const handleSearchSubmit = (term) => {
     setSearchTerm(term);
   };
-  
+
   // Build breadcrumb items
   const breadcrumbItems = [
     { label: 'Home', href: '/' },
     { label: 'Products', href: '/products', active: true },
   ];
-  
+
   // If a category is selected, add it to breadcrumb
   if (selectedCategory && categories.length > 0) {
     const category = categories.find(cat => cat.slug === selectedCategory);
@@ -132,16 +139,16 @@ export default function ProductsPage() {
       );
     }
   }
-  
+
   return (
     <div className="bg-background">
       <div className="container mx-auto px-4 py-8">
         <Breadcrumb items={breadcrumbItems} />
-        
+
         <div className="flex flex-col md:flex-row gap-8">
           {/* Sidebar Filters */}
           <div className="w-full md:w-1/4">
-            <ProductFilter 
+            <ProductFilter
               categories={categories}
               selectedCategory={selectedCategory}
               priceRange={priceRange}
@@ -149,22 +156,24 @@ export default function ProductsPage() {
               onPriceRangeChange={handlePriceRangeChange}
             />
           </div>
-          
+
           {/* Product Listing */}
           <div className="w-full md:w-3/4">
             <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center">
               <h1 className="text-2xl font-bold mb-2 sm:mb-0">
-                {selectedCategory && categories.length > 0 
+                {selectedCategory && categories.length > 0
                   ? categories.find(cat => cat.slug === selectedCategory)?.name || 'All Products'
-                  : searchTerm 
+                  : searchTerm
                     ? `Search Results for "${searchTerm}"`
-                    : 'All Products'
+                    : isFeatured
+                      ? 'Featured Products'
+                      : 'All Products'
                 }
               </h1>
-              
+
               <div className="flex items-center">
                 <span className="text-sm text-text-light mr-2">Sort by:</span>
-                <select 
+                <select
                   value={sortOption}
                   onChange={(e) => handleSortChange(e.target.value)}
                   className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
@@ -176,7 +185,7 @@ export default function ProductsPage() {
                 </select>
               </div>
             </div>
-            
+
             {loading ? (
               <div className="flex justify-center items-center h-64">
                 <LoadingSpinner />
@@ -192,19 +201,19 @@ export default function ProductsPage() {
             ) : (
               <>
                 <p className="text-text-light mb-4">Showing {products.length} of {pagination.count} products</p>
-                
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {products.map((product) => (
                     <ProductCard key={product._id} product={product} />
                   ))}
                 </div>
-                
+
                 {pagination.pages > 1 && (
                   <div className="mt-8">
-                    <Pagination 
+                    <Pagination
                       currentPage={pagination.page}
                       totalPages={pagination.pages}
-                      baseUrl={`/products?${selectedCategory ? `category=${selectedCategory}&` : ''}${searchTerm ? `keyword=${searchTerm}&` : ''}${sortOption ? `sort=${sortOption}&` : ''}`}
+                      baseUrl={`/products?${selectedCategory ? `category=${selectedCategory}&` : ''}${searchTerm ? `keyword=${searchTerm}&` : ''}${sortOption ? `sort=${sortOption}&` : ''}${isFeatured ? `featured=true&` : ''}`}
                     />
                   </div>
                 )}

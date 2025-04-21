@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import Alert from '@/components/ui/Alert';
 import { useAuth } from '@/context/AuthContext';
 
 export default function OrderDetails({ params }) {
@@ -16,7 +17,10 @@ export default function OrderDetails({ params }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [alert, setAlert] = useState({ show: false, type: 'info', message: '' });
   const [status, setStatus] = useState('');
+  const [isPaid, setIsPaid] = useState(false);
+  const [courier, setCourier] = useState('');
   const [trackingNumber, setTrackingNumber] = useState('');
   const [notes, setNotes] = useState('');
   const [isClient, setIsClient] = useState(false);
@@ -46,6 +50,8 @@ export default function OrderDetails({ params }) {
         const data = await response.json();
         setOrder(data);
         setStatus(data.status);
+        setIsPaid(data.isPaid || false);
+        setCourier(data.courier || '');
         setTrackingNumber(data.trackingNumber || '');
         setNotes(data.notes || '');
       } catch (error) {
@@ -66,7 +72,21 @@ export default function OrderDetails({ params }) {
     e.preventDefault();
 
     if (!isAuthenticated || !user) {
-      setError('You must be logged in to update an order');
+      setAlert({
+        show: true,
+        type: 'error',
+        message: 'You must be logged in to update an order'
+      });
+      return;
+    }
+
+    // Validate that non-COD orders must be paid before delivery
+    if (status === 'Delivered' && !isPaid && order.paymentMethod !== 'COD') {
+      setAlert({
+        show: true,
+        type: 'error',
+        message: 'Order must be paid before it can be marked as delivered'
+      });
       return;
     }
 
@@ -82,6 +102,8 @@ export default function OrderDetails({ params }) {
         },
         body: JSON.stringify({
           status,
+          isPaid,
+          courier,
           trackingNumber,
           notes
         })
@@ -96,10 +118,18 @@ export default function OrderDetails({ params }) {
       setOrder(data);
 
       // Show success message
-      alert('Order updated successfully');
+      setAlert({
+        show: true,
+        type: 'success',
+        message: 'Order updated successfully'
+      });
     } catch (error) {
       console.error('Error updating order:', error);
-      setError(error.message || 'An error occurred while updating the order');
+      setAlert({
+        show: true,
+        type: 'error',
+        message: error.message || 'An error occurred while updating the order'
+      });
     } finally {
       setIsUpdating(false);
     }
@@ -130,6 +160,69 @@ export default function OrderDetails({ params }) {
     }
   };
 
+  // Get courier name for display
+  const getCourierName = (courier) => {
+    switch (courier) {
+      case 'indiapost':
+        return 'India Post';
+      case 'delhivery':
+        return 'Delhivery';
+      case 'bluedart':
+        return 'BlueDart';
+      case 'dtdc':
+        return 'DTDC';
+      case 'fedex':
+        return 'FedEx';
+      case 'dhl':
+        return 'DHL';
+      case 'ekart':
+        return 'Ekart Logistics';
+      case 'other':
+        return 'Other';
+      default:
+        return courier || 'Not specified';
+    }
+  };
+
+  // Get tracking URL based on courier service
+  const getTrackingUrl = (trackingNumber, courier) => {
+    if (!trackingNumber) return '#';
+
+    switch (courier) {
+      case 'indiapost':
+        return `https://www.indiapost.gov.in/_layouts/15/DOP.Portal.Tracking/TrackConsignment.aspx?ConsignmentNo=${trackingNumber}`;
+      case 'delhivery':
+        return `https://www.delhivery.com/track/?tracking_id=${trackingNumber}`;
+      case 'bluedart':
+        return `https://www.bluedart.com/tracking?trackingId=${trackingNumber}`;
+      case 'dtdc':
+        return `https://www.dtdc.in/tracking/tracking_results.asp?TrkType=Tracking_Awb&TrackingID=${trackingNumber}`;
+      case 'fedex':
+        return `https://www.fedex.com/fedextrack/?trknbr=${trackingNumber}`;
+      case 'dhl':
+        return `https://www.dhl.com/in-en/home/tracking/tracking-express.html?submit=1&tracking-id=${trackingNumber}`;
+      case 'ekart':
+        return `https://ekartlogistics.com/shipmenttrack/${trackingNumber}`;
+      default:
+        return '#';
+    }
+  };
+
+  // Get valid status options based on current status
+  const getValidStatusOptions = (currentStatus) => {
+    // Define valid transitions
+    const validTransitions = {
+      'Pending': ['Pending', 'Processing', 'Cancelled'],
+      'Processing': ['Processing', 'Shipped', 'Cancelled'],
+      'Shipped': ['Shipped', 'Delivered', 'Cancelled'],
+      'Delivered': ['Delivered', 'Cancelled'], // Can only cancel after delivery in special cases
+      'Cancelled': ['Cancelled'] // Cannot transition from cancelled
+    };
+
+    // Return valid options for the current status
+    return validTransitions[currentStatus] || ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
+  };
+
   // Loading state
   if (loading || !isClient || isLoading) {
     return (
@@ -143,9 +236,11 @@ export default function OrderDetails({ params }) {
   if (error && !order) {
     return (
       <>
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-          {error}
-        </div>
+        <Alert
+          type="error"
+          message={error}
+          onClose={() => setError(null)}
+        />
         <button
           onClick={() => router.push('/admin/orders')}
           className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
@@ -158,6 +253,14 @@ export default function OrderDetails({ params }) {
 
   return (
     <>
+      {alert.show && (
+        <Alert
+          type={alert.type}
+          message={alert.message}
+          onClose={() => setAlert({ ...alert, show: false })}
+        />
+      )}
+
       <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">
@@ -179,9 +282,11 @@ export default function OrderDetails({ params }) {
       </div>
 
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-          {error}
-        </div>
+        <Alert
+          type="error"
+          message={error}
+          onClose={() => setError(null)}
+        />
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -208,9 +313,52 @@ export default function OrderDetails({ params }) {
                 )}
               </div>
             </div>
-            {order.trackingNumber && (
-              <div className="mt-2 text-sm text-gray-600">
-                <span className="font-medium">Tracking Number:</span> {order.trackingNumber}
+
+            {/* Status History */}
+            {order.statusHistory && order.statusHistory.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <h3 className="text-sm font-medium text-gray-700 mb-2">Status History</h3>
+                <div className="space-y-2">
+                  {order.statusHistory.map((entry, index) => (
+                    <div key={index} className="flex items-start">
+                      <div className={`flex-shrink-0 h-4 w-4 mt-1 rounded-full ${getStatusBadgeColor(entry.status)}`}></div>
+                      <div className="ml-2">
+                        <p className="text-sm font-medium text-gray-900">{entry.status}</p>
+                        <p className="text-xs text-gray-500">{formatDate(entry.timestamp)}</p>
+                        {entry.note && <p className="text-xs text-gray-600 mt-0.5">{entry.note}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {order.status === 'Shipped' && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <h3 className="text-sm font-medium text-gray-700 mb-2">Tracking Information</h3>
+                {order.courier && (
+                  <div className="mb-1 text-sm text-gray-600">
+                    <span className="font-medium">Courier:</span> {getCourierName(order.courier)}
+                  </div>
+                )}
+                {order.trackingNumber && (
+                  <div className="text-sm text-gray-600">
+                    <span className="font-medium">Tracking Number:</span> {order.trackingNumber}
+                    {order.courier && (
+                      <a
+                        href={getTrackingUrl(order.trackingNumber, order.courier)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ml-2 text-primary hover:text-primary-dark transition-colors"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                        Track
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -308,14 +456,101 @@ export default function OrderDetails({ params }) {
                   id="status"
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   value={status}
-                  onChange={(e) => setStatus(e.target.value)}
+                  onChange={(e) => {
+                    const newStatus = e.target.value;
+                    setStatus(newStatus);
+
+                    // Clear tracking info if status is changed from Shipped to something else
+                    if (status === 'Shipped' && newStatus !== 'Shipped') {
+                      setCourier('');
+                      setTrackingNumber('');
+                    }
+
+                    // If status is changed to Delivered, automatically mark as paid
+                    // This ensures consistency between status and payment status
+                    if (newStatus === 'Delivered') {
+                      setIsPaid(true);
+                    }
+                  }}
                 >
-                  <option value="Pending">Pending</option>
-                  <option value="Processing">Processing</option>
-                  <option value="Shipped">Shipped</option>
-                  <option value="Delivered">Delivered</option>
-                  <option value="Cancelled">Cancelled</option>
+                  {getValidStatusOptions(order.status).map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
                 </select>
+                <p className="mt-1 text-xs text-gray-500">
+                  Only showing valid status transitions from {order.status}
+                </p>
+                {status === 'Delivered' && (
+                  <p className="mt-1 text-sm text-amber-600">
+                    This order will be automatically marked as paid when delivered.
+                  </p>
+                )}
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Payment Status
+                </label>
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center">
+                    <input
+                      type="radio"
+                      id="payment-status-paid"
+                      name="payment-status"
+                      className="h-4 w-4 text-primary focus:ring-primary border-gray-300"
+                      checked={isPaid}
+                      onChange={() => setIsPaid(true)}
+                      disabled={order.paymentMethod === 'COD' && status === 'Delivered'}
+                    />
+                    <label htmlFor="payment-status-paid" className="ml-2 block text-sm text-gray-900">
+                      Paid
+                    </label>
+                  </div>
+                  <div className="flex items-center">
+                    <input
+                      type="radio"
+                      id="payment-status-unpaid"
+                      name="payment-status"
+                      className="h-4 w-4 text-primary focus:ring-primary border-gray-300"
+                      checked={!isPaid}
+                      onChange={() => setIsPaid(false)}
+                      disabled={status === 'Delivered'}
+                    />
+                    <label htmlFor="payment-status-unpaid" className={`ml-2 block text-sm ${status === 'Delivered' ? 'text-gray-400' : 'text-gray-900'}`}>
+                      Unpaid
+                    </label>
+                  </div>
+                </div>
+                {status === 'Delivered' && (
+                  <p className="mt-1 text-sm text-gray-500">
+                    All delivered orders are automatically marked as paid.
+                  </p>
+                )}
+              </div>
+
+              <div className="mb-4">
+                <label htmlFor="courier" className="block text-sm font-medium text-gray-700 mb-1">
+                  Courier Service
+                </label>
+                <select
+                  id="courier"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                  value={courier}
+                  onChange={(e) => setCourier(e.target.value)}
+                  disabled={status !== 'Shipped'}
+                >
+                  <option value="">Select a courier service</option>
+                  <option value="indiapost">India Post</option>
+                  <option value="delhivery">Delhivery</option>
+                  <option value="bluedart">BlueDart</option>
+                  <option value="dtdc">DTDC</option>
+                  <option value="fedex">FedEx</option>
+                  <option value="dhl">DHL</option>
+                  <option value="ekart">Ekart Logistics</option>
+                  <option value="other">Other</option>
+                </select>
+                {status === 'Shipped' && !courier && (
+                  <p className="mt-1 text-sm text-amber-600">Please select a courier service before adding tracking number</p>
+                )}
               </div>
               <div className="mb-4">
                 <label htmlFor="tracking" className="block text-sm font-medium text-gray-700 mb-1">
@@ -328,7 +563,11 @@ export default function OrderDetails({ params }) {
                   value={trackingNumber}
                   onChange={(e) => setTrackingNumber(e.target.value)}
                   placeholder="Enter tracking number"
+                  disabled={status !== 'Shipped' || !courier}
                 />
+                {status === 'Shipped' && courier && !trackingNumber && (
+                  <p className="mt-1 text-sm text-amber-600">Please enter a tracking number</p>
+                )}
               </div>
               <div className="mb-4">
                 <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">

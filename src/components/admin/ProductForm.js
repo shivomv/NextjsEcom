@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import CloudinaryImagePicker from '@/components/common/CloudinaryImagePicker';
+import CloudinaryMultiImagePicker from '@/components/common/CloudinaryMultiImagePicker';
 
 export default function ProductForm({ initialData, onSubmit, isSubmitting, isEditing = false }) {
   const router = useRouter();
@@ -14,20 +15,21 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting, isEdi
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [newSpecification, setNewSpecification] = useState({ name: '', value: '' });
   const [errors, setErrors] = useState({});
-  const [previewImage, setPreviewImage] = useState(initialData.image || '');
+  const [imageError, setImageError] = useState(null);
+  const [imagesError, setImagesError] = useState(null);
 
   // Fetch categories
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         setIsLoadingCategories(true);
-        
+
         const response = await fetch('/api/categories');
-        
+
         if (!response.ok) {
           throw new Error('Failed to fetch categories');
         }
-        
+
         const data = await response.json();
         setCategories(data);
       } catch (error) {
@@ -36,24 +38,24 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting, isEdi
         setIsLoadingCategories(false);
       }
     };
-    
+
     fetchCategories();
   }, []);
 
   // Handle input change
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    
+
     // Handle different input types
-    const newValue = type === 'checkbox' ? checked : 
-                    (name === 'price' || name === 'mrp' || name === 'countInStock') ? 
+    const newValue = type === 'checkbox' ? checked :
+                    (name === 'price' || name === 'mrp' || name === 'countInStock') ?
                     (value === '' ? '' : Number(value)) : value;
-    
+
     setFormData({
       ...formData,
       [name]: newValue
     });
-    
+
     // Clear error for this field
     if (errors[name]) {
       setErrors({
@@ -63,19 +65,84 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting, isEdi
     }
   };
 
-  // Handle image change
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    // For a real implementation, you would upload the file to a storage service
-    // and get back a URL. For this example, we'll use a placeholder.
-    const imageUrl = URL.createObjectURL(file);
-    setPreviewImage(imageUrl);
-    
+  // Handle main image upload success
+  const handleImageUpload = (result) => {
+    console.log('Main image upload success:', result);
+
+    // Store the complete image data in the form
     setFormData({
       ...formData,
-      image: imageUrl // In a real app, this would be the URL from your storage service
+      image: result.url,
+      imageData: {
+        publicId: result.public_id,
+        width: result.width,
+        height: result.height,
+        format: result.format,
+        resourceType: result.resource_type
+      }
+    });
+
+    // Clear any image error
+    if (errors.image) {
+      setErrors({
+        ...errors,
+        image: null
+      });
+    }
+  };
+
+  // Handle main image upload error
+  const handleImageError = (errorMessage) => {
+    setErrors({
+      ...errors,
+      image: errorMessage
+    });
+    setImageError(errorMessage);
+  };
+
+  // Handle additional images upload success
+  const handleImagesUpload = (imageUrls, results) => {
+    console.log('Additional images upload success:', results);
+
+    // Store the complete image data in the form
+    const imagesData = results.map(result => ({
+      url: result.url,
+      publicId: result.public_id,
+      width: result.width,
+      height: result.height,
+      format: result.format,
+      resourceType: result.resource_type
+    }));
+
+    setFormData({
+      ...formData,
+      images: imageUrls,
+      imagesData: imagesData
+    });
+
+    // Clear any images error
+    if (errors.images) {
+      setErrors({
+        ...errors,
+        images: null
+      });
+    }
+  };
+
+  // Handle additional images upload error
+  const handleImagesError = (errorMessage) => {
+    setErrors({
+      ...errors,
+      images: errorMessage
+    });
+    setImagesError(errorMessage);
+  };
+
+  // Handle image removal
+  const handleImageRemove = (updatedImages) => {
+    setFormData({
+      ...formData,
+      images: updatedImages
     });
   };
 
@@ -91,7 +158,7 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting, isEdi
   // Add specification
   const handleAddSpecification = () => {
     if (!newSpecification.name || !newSpecification.value) return;
-    
+
     setFormData({
       ...formData,
       specifications: [
@@ -99,7 +166,7 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting, isEdi
         { ...newSpecification }
       ]
     });
-    
+
     // Reset new specification form
     setNewSpecification({ name: '', value: '' });
   };
@@ -108,7 +175,7 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting, isEdi
   const handleRemoveSpecification = (index) => {
     const updatedSpecifications = [...formData.specifications];
     updatedSpecifications.splice(index, 1);
-    
+
     setFormData({
       ...formData,
       specifications: updatedSpecifications
@@ -118,7 +185,7 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting, isEdi
   // Validate form
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.name) newErrors.name = 'Product name is required';
     if (!formData.description) newErrors.description = 'Description is required';
     if (!formData.price) newErrors.price = 'Price is required';
@@ -128,7 +195,7 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting, isEdi
     if (!formData.countInStock && formData.countInStock !== 0) newErrors.countInStock = 'Stock quantity is required';
     if (formData.countInStock < 0) newErrors.countInStock = 'Stock quantity cannot be negative';
     if (!formData.image) newErrors.image = 'Product image is required';
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -136,9 +203,9 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting, isEdi
   // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     onSubmit(formData);
   };
 
@@ -287,44 +354,27 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting, isEdi
           {/* Right column */}
           <div className="space-y-6">
             {/* Product Image */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Product Image*
-              </label>
-              <div className="mt-1 flex items-center">
-                <div className="w-32 h-32 border border-gray-300 rounded-md overflow-hidden bg-gray-100 relative">
-                  {previewImage ? (
-                    <Image
-                      src={previewImage}
-                      alt="Product preview"
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                  )}
-                </div>
-                <label htmlFor="image-upload" className="ml-5 bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary cursor-pointer">
-                  Change
-                </label>
-                <input
-                  id="image-upload"
-                  name="image"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="sr-only"
-                />
-              </div>
-              {errors.image && <p className="mt-1 text-sm text-red-600">{errors.image}</p>}
-              <p className="mt-2 text-sm text-gray-500">
-                JPG, PNG or GIF up to 5MB
-              </p>
-            </div>
+            <CloudinaryImagePicker
+              initialImage={initialData.image || ''}
+              onImageUpload={handleImageUpload}
+              onImageError={handleImageError}
+              folder="my-shop/products"
+              label="Product Image"
+              required={true}
+              errorMessage={errors.image || imageError}
+            />
+
+            {/* Additional Images */}
+            <CloudinaryMultiImagePicker
+              initialImages={initialData.images || []}
+              onImagesUpload={handleImagesUpload}
+              onImagesError={handleImagesError}
+              onImageRemove={handleImageRemove}
+              folder="my-shop/products"
+              label="Additional Images"
+              errorMessage={errors.images || imagesError}
+              maxImages={10}
+            />
 
             {/* Status toggles */}
             <div className="space-y-4">
@@ -361,7 +411,7 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting, isEdi
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Specifications
               </label>
-              
+
               {/* Existing specifications */}
               {formData.specifications.length > 0 && (
                 <div className="mb-4 border border-gray-200 rounded-md divide-y">
@@ -383,7 +433,7 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting, isEdi
                   ))}
                 </div>
               )}
-              
+
               {/* Add new specification */}
               <div className="grid grid-cols-5 gap-2">
                 <div className="col-span-2">

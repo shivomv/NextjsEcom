@@ -40,6 +40,13 @@ export default function AddCategory() {
       setIsSubmitting(true);
       setError(null);
 
+      // Log the data being sent to the server
+      console.log('Sending category data to server:', {
+        ...categoryData,
+        image: categoryData.image ? 'Present' : 'Not present',
+        imageData: categoryData.imageData ? 'Present' : 'Not present'
+      });
+
       const response = await fetch('/api/categories', {
         method: 'POST',
         headers: {

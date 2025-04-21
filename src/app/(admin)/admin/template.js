@@ -42,13 +42,7 @@ export default function AdminTemplate({ children }) {
 
   // Render admin content only if user is authenticated and is an admin
   if (isClient && !loading && isAuthenticated && user?.role === 'admin') {
-    return (
-      <CartProvider>
-        <div className="min-h-screen bg-gray-100">
-          {children}
-        </div>
-      </CartProvider>
-    );
+    return children;
   }
 
   // Show loading state while redirecting

@@ -84,6 +84,61 @@ const orderSchema = new mongoose.Schema(
       enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'],
       default: 'Pending',
     },
+    statusHistory: [
+      {
+        status: {
+          type: String,
+          enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Payment Received'],
+          required: true
+        },
+        timestamp: {
+          type: Date,
+          default: Date.now
+        },
+        note: String
+      }
+    ],
+    statusTimeline: {
+      Pending: {
+        timestamp: Date,
+        completed: {
+          type: Boolean,
+          default: false
+        }
+      },
+      Processing: {
+        timestamp: Date,
+        completed: {
+          type: Boolean,
+          default: false
+        }
+      },
+      Shipped: {
+        timestamp: Date,
+        completed: {
+          type: Boolean,
+          default: false
+        }
+      },
+      Delivered: {
+        timestamp: Date,
+        completed: {
+          type: Boolean,
+          default: false
+        }
+      },
+      Cancelled: {
+        timestamp: Date,
+        completed: {
+          type: Boolean,
+          default: false
+        }
+      }
+    },
+    courier: {
+      type: String,
+      enum: ['indiapost', 'delhivery', 'bluedart', 'dtdc', 'fedex', 'dhl', 'ekart', 'other'],
+    },
     trackingNumber: {
       type: String,
     },
@@ -96,15 +151,48 @@ const orderSchema = new mongoose.Schema(
   }
 );
 
-// Generate order number
+// Generate order number and add initial status to history
 orderSchema.pre('save', function (next) {
   if (this.isNew) {
+    // Generate order number
     const date = new Date();
     const year = date.getFullYear().toString().substr(-2);
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const day = date.getDate().toString().padStart(2, '0');
     const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
     this.orderNumber = `PS${year}${month}${day}${random}`;
+
+    // Add initial status to history
+    const currentTime = this.createdAt || new Date();
+    this.statusHistory = [{
+      status: this.status,
+      timestamp: currentTime,
+      note: 'Order created'
+    }];
+
+    // Initialize statusTimeline
+    this.statusTimeline = {
+      Pending: {
+        timestamp: currentTime,
+        completed: true
+      },
+      Processing: {
+        timestamp: null,
+        completed: false
+      },
+      Shipped: {
+        timestamp: null,
+        completed: false
+      },
+      Delivered: {
+        timestamp: null,
+        completed: false
+      },
+      Cancelled: {
+        timestamp: null,
+        completed: false
+      }
+    };
   }
   next();
 });

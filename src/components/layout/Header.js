@@ -4,13 +4,17 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
+import { useCategories } from '@/context/CategoryContext';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [mobileCategoryOpen, setMobileCategoryOpen] = useState(false);
+  const [mobileFeaturedOpen, setMobileFeaturedOpen] = useState(false);
   const { user, logout, isAuthenticated, isAdmin } = useAuth();
   const { cartItems } = useCart();
+  const { categories, parentCategories, festivalCategories, loading: categoriesLoading } = useCategories();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -125,18 +129,73 @@ export default function Header() {
               <span className="mr-1.5">🛍️</span> All Products
               <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-pink-orange transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
             </Link>
-            <Link href="/category/puja-items" className="text-text hover:text-primary transition-colors font-medium flex items-center px-3 py-2 relative group">
-              <span className="mr-1.5">🪔</span> Puja Items
-              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-pink-orange transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
-            </Link>
-            <Link href="/category/idols" className="text-text hover:text-primary transition-colors font-medium flex items-center px-3 py-2 relative group">
-              <span className="mr-1.5">🙏</span> Idols
-              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-pink-orange transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
-            </Link>
-            <Link href="/category/cow-products" className="text-text hover:text-primary transition-colors font-medium flex items-center px-3 py-2 relative group">
-              <span className="mr-1.5">🐄</span> Cow Products
-              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-pink-orange transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
-            </Link>
+
+            {/* Categories Dropdown */}
+            <div className="relative group">
+              <button className="text-text hover:text-primary transition-colors font-medium flex items-center px-3 py-2 relative">
+                <span className="mr-1.5">📦</span> Categories
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-pink-orange transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
+              </button>
+              <div className="absolute left-0 mt-0 w-56 bg-white rounded-md shadow-lg overflow-hidden z-20 transform opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 origin-top-left hidden group-hover:block">
+                <div className="py-2">
+                  <Link href="/products" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary transition-colors">
+                    All Products
+                  </Link>
+                  {!categoriesLoading && parentCategories.map((category) => (
+                    <Link
+                      key={category._id}
+                      href={`/category/${category.slug}`}
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary transition-colors"
+                    >
+                      {category.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Featured Products Dropdown */}
+            <div className="relative group">
+              <button className="text-text hover:text-primary transition-colors font-medium flex items-center px-3 py-2 relative">
+                <span className="mr-1.5">⭐</span> Featured
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-pink-orange transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
+              </button>
+              <div className="absolute left-0 mt-0 w-56 bg-white rounded-md shadow-lg overflow-hidden z-20 transform opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 origin-top-left hidden group-hover:block">
+                <div className="py-2">
+                  <Link href="/products?featured=true" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary transition-colors">
+                    All Featured Products
+                  </Link>
+                  <Link href="/products?sort=rating" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary transition-colors">
+                    Top Rated Products
+                  </Link>
+                  <Link href="/products?sort=newest" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary transition-colors">
+                    New Arrivals
+                  </Link>
+                  {festivalCategories.length > 0 && (
+                    <>
+                      <div className="border-t border-gray-100 my-1"></div>
+                      <div className="px-4 py-1 text-xs font-semibold text-gray-500">FESTIVAL SPECIALS</div>
+                      {festivalCategories.map((category) => (
+                        <Link
+                          key={category._id}
+                          href={`/category/${category.slug}`}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary transition-colors"
+                        >
+                          {category.name}
+                        </Link>
+                      ))}
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <Link href="/about" className="text-text hover:text-primary transition-colors font-medium flex items-center px-3 py-2 relative group">
               <span className="mr-1.5">🚩</span> About Us
               <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-pink-orange transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
@@ -312,24 +371,86 @@ export default function Header() {
               </svg>
               All Products
             </Link>
-            <Link href="/category/puja-items" className="py-4 text-text hover:text-primary transition-colors text-lg border-b border-gray-100 flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-              Puja Items
-            </Link>
-            <Link href="/category/idols" className="py-4 text-text hover:text-primary transition-colors text-lg border-b border-gray-100 flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-              </svg>
-              Idols
-            </Link>
-            <Link href="/category/cow-products" className="py-4 text-text hover:text-primary transition-colors text-lg border-b border-gray-100 flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Cow Products
-            </Link>
+
+            {/* Categories Dropdown */}
+            <div className="border-b border-gray-100">
+              <button
+                onClick={() => setMobileCategoryOpen(!mobileCategoryOpen)}
+                className="py-4 w-full text-text hover:text-primary transition-colors text-lg flex items-center justify-between"
+              >
+                <div className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                  </svg>
+                  Categories
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 transition-transform duration-200 ${mobileCategoryOpen ? 'transform rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {mobileCategoryOpen && (
+                <div className="pl-8 pb-2">
+                  <Link href="/products" className="py-3 block text-text hover:text-primary transition-colors text-base">
+                    All Products
+                  </Link>
+                  {!categoriesLoading && parentCategories.map((category) => (
+                    <Link
+                      key={category._id}
+                      href={`/category/${category.slug}`}
+                      className="py-3 block text-text hover:text-primary transition-colors text-base"
+                    >
+                      {category.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Featured Products Dropdown */}
+            <div className="border-b border-gray-100">
+              <button
+                onClick={() => setMobileFeaturedOpen(!mobileFeaturedOpen)}
+                className="py-4 w-full text-text hover:text-primary transition-colors text-lg flex items-center justify-between"
+              >
+                <div className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                  </svg>
+                  Featured
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 transition-transform duration-200 ${mobileFeaturedOpen ? 'transform rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {mobileFeaturedOpen && (
+                <div className="pl-8 pb-2">
+                  <Link href="/products?featured=true" className="py-3 block text-text hover:text-primary transition-colors text-base">
+                    All Featured Products
+                  </Link>
+                  <Link href="/products?sort=rating" className="py-3 block text-text hover:text-primary transition-colors text-base">
+                    Top Rated Products
+                  </Link>
+                  <Link href="/products?sort=newest" className="py-3 block text-text hover:text-primary transition-colors text-base">
+                    New Arrivals
+                  </Link>
+                  {festivalCategories.length > 0 && (
+                    <>
+                      <div className="pt-1 pb-1 text-xs font-semibold text-gray-500">FESTIVAL SPECIALS</div>
+                      {festivalCategories.map((category) => (
+                        <Link
+                          key={category._id}
+                          href={`/category/${category.slug}`}
+                          className="py-3 block text-text hover:text-primary transition-colors text-base"
+                        >
+                          {category.name}
+                        </Link>
+                      ))}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
             <Link href="/about" className="py-4 text-text hover:text-primary transition-colors text-lg border-b border-gray-100 flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

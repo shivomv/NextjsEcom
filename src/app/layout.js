@@ -1,4 +1,8 @@
 import "./globals.css";
+import { AuthProvider } from "@/context/AuthContext";
+import { CartProvider } from "@/context/CartContext";
+import { CategoryProvider } from "@/context/CategoryContext";
+import ClientOnly from "@/components/common/ClientOnly";
 
 export const metadata = {
   title: "Prashasak Samiti - Religious Products",
@@ -18,11 +22,15 @@ export default function RootLayout({ children }) {
         className={`antialiased bg-pattern-dots font-sans`}
         suppressHydrationWarning={true} // Suppress hydration warnings for body attributes
       >
-
-                <main className="flex-grow">
-                  {children}
-                </main>
-
+        <ClientOnly>
+          <AuthProvider>
+            <CartProvider>
+              <CategoryProvider>
+                {children}
+              </CategoryProvider>
+            </CartProvider>
+          </AuthProvider>
+        </ClientOnly>
       </body>
     </html>
   );

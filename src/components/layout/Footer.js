@@ -3,9 +3,11 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
+import { useCategories } from '@/context/CategoryContext';
 
 export default function Footer() {
   const [expandedSection, setExpandedSection] = useState(null);
+  const { parentCategories, festivalCategories, loading: categoriesLoading } = useCategories();
 
   const toggleSection = (section) => {
     if (expandedSection === section) {
@@ -164,32 +166,47 @@ export default function Footer() {
             </h4>
             <div className={`${expandedSection === 'categories' ? 'block' : 'hidden sm:block'}`}>
               <ul className="space-y-2">
-              <li>
-                <Link href="/category/puja-items" className="text-text-light hover:text-primary transition-colors">
-                  Puja Items
-                </Link>
-              </li>
-              <li>
-                <Link href="/category/idols" className="text-text-light hover:text-primary transition-colors">
-                  Idols & Statues
-                </Link>
-              </li>
-              <li>
-                <Link href="/category/cow-products" className="text-text-light hover:text-primary transition-colors">
-                  Cow Products
-                </Link>
-              </li>
-              <li>
-                <Link href="/category/diwali" className="text-text-light hover:text-primary transition-colors">
-                  Diwali Special
-                </Link>
-              </li>
-              <li>
-                <Link href="/category/gifts" className="text-text-light hover:text-primary transition-colors">
-                  Spiritual Gifts
-                </Link>
-              </li>
-            </ul>
+                {!categoriesLoading ? (
+                  // Display categories from database
+                  parentCategories.map((category) => (
+                    <li key={category._id}>
+                      <Link href={`/category/${category.slug}`} className="text-text-light hover:text-primary transition-colors">
+                        {category.name}
+                      </Link>
+                    </li>
+                  ))
+                ) : (
+                  // Fallback categories while loading
+                  <>
+                    <li>
+                      <Link href="/category/puja-items" className="text-text-light hover:text-primary transition-colors">
+                        Puja Items
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/category/idols" className="text-text-light hover:text-primary transition-colors">
+                        Idols & Statues
+                      </Link>
+                    </li>
+                  </>
+                )}
+
+                {/* Festival categories */}
+                {!categoriesLoading && festivalCategories.length > 0 && (
+                  <li className="pt-2 border-t border-gray-200 mt-2">
+                    <span className="text-text-light font-medium">Festivals:</span>
+                    <ul className="pl-2 mt-1 space-y-1">
+                      {festivalCategories.map((festival) => (
+                        <li key={festival._id}>
+                          <Link href={`/category/${festival.slug}`} className="text-text-light hover:text-primary transition-colors">
+                            {festival.name}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                )}
+              </ul>
             </div>
           </div>
 

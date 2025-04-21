@@ -15,15 +15,11 @@ export default function CartPage() {
   const [tax, setTax] = useState(0);
   const [isClient, setIsClient] = useState(false);
 
-  // Set isClient to true and load cart data when component mounts
+  // Set isClient to true when component mounts
   useEffect(() => {
     setIsClient(true);
-
-    // Load cart data when the component mounts
-    if (isAuthenticated) {
-      refreshCart();
-    }
-  }, [isAuthenticated, refreshCart]);
+    // No need to call refreshCart here as the CartContext already loads the cart data
+  }, []);
 
   // Calculate totals whenever cart items change
   useEffect(() => {
@@ -84,10 +80,8 @@ export default function CartPage() {
           price: typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0,
         }, qty);
 
-        // Refresh cart data after changing quantity for authenticated users
-        if (isAuthenticated) {
-          setTimeout(() => refreshCart(), 300); // Small delay to allow server to process
-        }
+        // No need to call refreshCart here as addToCart already updates the cart
+        // The server-side update is handled by the addToCart function
       } catch (error) {
         console.error('Error updating cart quantity:', error);
       }

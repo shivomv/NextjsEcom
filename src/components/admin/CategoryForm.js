@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import CloudinaryImagePicker from '@/components/common/CloudinaryImagePicker';
 
 export default function CategoryForm({ initialData, onSubmit, isSubmitting, isEditing = false }) {
   const router = useRouter();
@@ -13,27 +13,27 @@ export default function CategoryForm({ initialData, onSubmit, isSubmitting, isEd
   const [parentCategories, setParentCategories] = useState([]);
   const [isLoadingParentCategories, setIsLoadingParentCategories] = useState(true);
   const [errors, setErrors] = useState({});
-  const [previewImage, setPreviewImage] = useState(initialData.image || '');
+  const [imageError, setImageError] = useState(null);
 
   // Fetch parent categories
   useEffect(() => {
     const fetchParentCategories = async () => {
       try {
         setIsLoadingParentCategories(true);
-        
+
         const response = await fetch('/api/categories/parents');
-        
+
         if (!response.ok) {
           throw new Error('Failed to fetch parent categories');
         }
-        
+
         const data = await response.json();
-        
+
         // Filter out the current category if editing
-        const filteredCategories = isEditing 
+        const filteredCategories = isEditing
           ? data.filter(category => category._id !== initialData._id)
           : data;
-          
+
         setParentCategories(filteredCategories);
       } catch (error) {
         console.error('Error fetching parent categories:', error);
@@ -41,24 +41,24 @@ export default function CategoryForm({ initialData, onSubmit, isSubmitting, isEd
         setIsLoadingParentCategories(false);
       }
     };
-    
+
     fetchParentCategories();
   }, [isEditing, initialData._id]);
 
   // Handle input change
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    
+
     // Handle different input types
-    const newValue = type === 'checkbox' ? checked : 
-                    (name === 'order') ? 
+    const newValue = type === 'checkbox' ? checked :
+                    (name === 'order') ?
                     (value === '' ? '' : Number(value)) : value;
-    
+
     setFormData({
       ...formData,
       [name]: newValue
     });
-    
+
     // Clear error for this field
     if (errors[name]) {
       setErrors({
@@ -68,29 +68,48 @@ export default function CategoryForm({ initialData, onSubmit, isSubmitting, isEd
     }
   };
 
-  // Handle image change
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    // For a real implementation, you would upload the file to a storage service
-    // and get back a URL. For this example, we'll use a placeholder.
-    const imageUrl = URL.createObjectURL(file);
-    setPreviewImage(imageUrl);
-    
+  // Handle image upload success
+  const handleImageUpload = (result) => {
+    console.log('Image upload success:', result);
+
+    // Store the complete image data in the form
     setFormData({
       ...formData,
-      image: imageUrl // In a real app, this would be the URL from your storage service
+      image: result.url,
+      imageData: {
+        publicId: result.public_id,
+        width: result.width,
+        height: result.height,
+        format: result.format,
+        resourceType: result.resource_type
+      }
     });
+
+    // Clear any image error
+    if (errors.image) {
+      setErrors({
+        ...errors,
+        image: null
+      });
+    }
+  };
+
+  // Handle image upload error
+  const handleImageError = (errorMessage) => {
+    setErrors({
+      ...errors,
+      image: errorMessage
+    });
+    setImageError(errorMessage);
   };
 
   // Validate form
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.name) newErrors.name = 'Category name is required';
     if (!formData.description) newErrors.description = 'Description is required';
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -98,9 +117,16 @@ export default function CategoryForm({ initialData, onSubmit, isSubmitting, isEd
   // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
+    // Log the form data being submitted
+    console.log('Submitting category form with data:', {
+      ...formData,
+      image: formData.image ? 'Present' : 'Not present',
+      imageData: formData.imageData ? 'Present' : 'Not present'
+    });
+
     onSubmit(formData);
   };
 
@@ -194,43 +220,14 @@ export default function CategoryForm({ initialData, onSubmit, isSubmitting, isEd
           {/* Right column */}
           <div className="space-y-6">
             {/* Category Image */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Category Image
-              </label>
-              <div className="mt-1 flex items-center">
-                <div className="w-32 h-32 border border-gray-300 rounded-md overflow-hidden bg-gray-100 relative">
-                  {previewImage ? (
-                    <Image
-                      src={previewImage}
-                      alt="Category preview"
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                  )}
-                </div>
-                <label htmlFor="image-upload" className="ml-5 bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary cursor-pointer">
-                  Change
-                </label>
-                <input
-                  id="image-upload"
-                  name="image"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="sr-only"
-                />
-              </div>
-              <p className="mt-2 text-sm text-gray-500">
-                JPG, PNG or GIF up to 5MB
-              </p>
-            </div>
+            <CloudinaryImagePicker
+              initialImage={initialData.image || ''}
+              onImageUpload={handleImageUpload}
+              onImageError={handleImageError}
+              folder="my-shop/categories"
+              label="Category Image"
+              errorMessage={errors.image || imageError}
+            />
 
             {/* Status toggles */}
             <div className="space-y-4">

@@ -33,30 +33,64 @@ export const verifyToken = (token) => {
 export const isAuthenticated = async (request) => {
   try {
     // Get token from authorization header
-    const token = request.headers.get('authorization')?.split(' ')[1];
+    const authHeader = request.headers.get('authorization');
+    console.log('Auth header:', authHeader ? 'Present' : 'Not present');
+
+    const token = authHeader?.split(' ')[1];
+    console.log('Token from header:', token ? 'Present' : 'Not present');
+
+    // If token in header, use it
+    if (token) {
+      console.log('Using token from header');
+      return verifyAndGetUser(token);
+    }
 
     // If no token in header, check cookies
+    console.log('No token in header, checking cookies');
     const cookieStore = cookies();
-    const cookieToken = !token ? cookieStore.get('token')?.value : null;
+    const tokenCookie = cookieStore.get('token');
+    const cookieToken = tokenCookie?.value;
+    console.log('Token from cookie:', cookieToken ? 'Present' : 'Not present');
 
-    if (!token && !cookieToken) {
-      return { success: false, message: 'Not authorized, no token' };
+    if (cookieToken) {
+      console.log('Using token from cookie');
+      return verifyAndGetUser(cookieToken);
     }
 
+    console.log('No token found in header or cookies');
+    return { success: false, message: 'Not authorized, no token' };
+
+  } catch (error) {
+    console.error('Auth error:', error);
+    return { success: false, message: 'Authentication error' };
+  }
+};
+
+/**
+ * Verify token and get user
+ */
+const verifyAndGetUser = async (token) => {
+  try {
+    console.log('Verifying token...');
     // Verify token
-    const decoded = verifyToken(token || cookieToken);
+    const decoded = verifyToken(token);
     if (!decoded) {
+      console.log('Token verification failed');
       return { success: false, message: 'Not authorized, token failed' };
     }
+    console.log('Token verified successfully, user ID:', decoded.id);
 
     // Connect to database
     await dbConnect();
 
     // Get user from database
+    console.log('Finding user in database...');
     const user = await User.findById(decoded.id).select('-password');
     if (!user) {
+      console.log('User not found in database');
       return { success: false, message: 'User not found' };
     }
+    console.log('User found in database, role:', user.role);
 
     return { success: true, user };
   } catch (error) {
@@ -87,13 +121,16 @@ export const authMiddleware = async (request) => {
   const authResult = await isAuthenticated(request);
 
   if (!authResult.success) {
-    return NextResponse.json(
-      { message: authResult.message },
-      { status: 401 }
-    );
+    return {
+      success: false,
+      status: NextResponse.json(
+        { message: authResult.message },
+        { status: 401 }
+      )
+    };
   }
 
-  return { user: authResult.user };
+  return { success: true, user: authResult.user };
 };
 
 /**
@@ -103,20 +140,26 @@ export const adminMiddleware = async (request) => {
   const authResult = await isAuthenticated(request);
 
   if (!authResult.success) {
-    return NextResponse.json(
-      { message: authResult.message },
-      { status: 401 }
-    );
+    return {
+      success: false,
+      status: NextResponse.json(
+        { message: authResult.message },
+        { status: 401 }
+      )
+    };
   }
 
   const adminResult = await isAdmin(authResult.user);
 
   if (!adminResult.success) {
-    return NextResponse.json(
-      { message: adminResult.message },
-      { status: 403 }
-    );
+    return {
+      success: false,
+      status: NextResponse.json(
+        { message: adminResult.message },
+        { status: 403 }
+      )
+    };
   }
 
-  return { user: authResult.user };
+  return { success: true, user: authResult.user };
 };

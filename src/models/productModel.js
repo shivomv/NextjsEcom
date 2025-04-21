@@ -46,7 +46,24 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Please add a product image'],
     },
+    imageData: {
+      publicId: String,
+      width: Number,
+      height: Number,
+      format: String,
+      resourceType: String
+    },
     images: [String],
+    imagesData: [
+      {
+        url: String,
+        publicId: String,
+        width: Number,
+        height: Number,
+        format: String,
+        resourceType: String
+      }
+    ],
     brand: {
       type: String,
       required: [true, 'Please add a brand'],

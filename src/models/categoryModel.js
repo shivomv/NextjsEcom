@@ -20,6 +20,13 @@ const categorySchema = new mongoose.Schema(
     image: {
       type: String,
     },
+    imageData: {
+      publicId: String,
+      width: Number,
+      height: Number,
+      format: String,
+      resourceType: String
+    },
     parent: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Category',

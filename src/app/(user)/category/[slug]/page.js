@@ -1,12 +1,52 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ImageWithFallback from '@/components/common/ImageWithFallback';
+import { useCategories } from '@/context/CategoryContext';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 // This is a dynamic page that will display products based on the category slug
 export default function CategoryPage({ params }) {
   const { slug } = params;
+  const { getCategoryBySlug, loading: categoriesLoading } = useCategories();
+  const [category, setCategory] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState([]);
 
-  // Mock category data - in a real app, this would come from an API
-  const categoryData = {
+  // Fetch category data and products
+  useEffect(() => {
+    const fetchCategoryData = async () => {
+      setLoading(true);
+
+      // Get category from context
+      const categoryData = getCategoryBySlug(slug);
+
+      if (categoryData) {
+        setCategory(categoryData);
+
+        // Fetch products for this category
+        try {
+          const response = await fetch(`/api/products?category=${slug}`);
+          if (response.ok) {
+            const data = await response.json();
+            setProducts(data);
+          }
+        } catch (error) {
+          console.error('Error fetching products:', error);
+        }
+      }
+
+      setLoading(false);
+    };
+
+    if (!categoriesLoading) {
+      fetchCategoryData();
+    }
+  }, [slug, categoriesLoading, getCategoryBySlug]);
+
+  // Fallback category data if needed
+  const mockCategoryData = {
     idols: {
       name: 'Religious Idols',
       description: 'Authentic and traditionally crafted religious idols made with pure materials',
@@ -261,14 +301,18 @@ export default function CategoryPage({ params }) {
     products: [],
   };
 
-  // Get the category data based on the slug
-  const category = categoryData[slug] || defaultCategory;
+  // Use real category data or fallback to mock data
+  const displayCategory = category || mockCategoryData[slug] || defaultCategory;
+  const displayProducts = products.length > 0 ? products : (mockCategoryData[slug]?.products || []);
 
-  // Generate metadata for the page
-  const metadata = {
-    title: `${category.name} | Prashasak Samiti`,
-    description: category.description,
-  };
+  // Show loading state
+  if (loading || categoriesLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-background min-h-screen">
@@ -277,18 +321,18 @@ export default function CategoryPage({ params }) {
         <div className="absolute inset-0 bg-gradient-to-r from-purple-900/80 to-pink-800/80 z-10"></div>
         <div className="relative h-[40vh] min-h-[300px] max-h-[400px] w-full">
           <ImageWithFallback
-            src={category.image}
-            alt={category.name}
+            src={displayCategory.image}
+            alt={displayCategory.name}
             fill
             priority
             className="object-cover"
           />
           <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center p-4">
             <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 drop-shadow-lg">
-              {category.name}
+              {displayCategory.name}
             </h1>
             <p className="text-white/90 text-lg max-w-2xl mx-auto drop-shadow">
-              {category.description}
+              {displayCategory.description}
             </p>
           </div>
         </div>
@@ -326,9 +370,9 @@ export default function CategoryPage({ params }) {
         </div>
 
         {/* Products Grid */}
-        {category.products.length > 0 ? (
+        {displayProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {category.products.map((product) => (
+            {displayProducts.map((product) => (
               <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
                 <Link href={`/products/${product.slug}`} className="block relative h-64 w-full overflow-hidden">
                   <ImageWithFallback
@@ -384,7 +428,7 @@ export default function CategoryPage({ params }) {
         )}
 
         {/* Pagination */}
-        {category.products.length > 0 && (
+        {displayProducts.length > 0 && (
           <div className="mt-12 flex justify-center">
             <nav className="flex items-center space-x-2">
               <button className="w-10 h-10 rounded-full flex items-center justify-center border border-gray-300 text-text-light hover:bg-gray-100 transition-colors">

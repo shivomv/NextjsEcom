@@ -1,48 +1,25 @@
-import "../globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import MobileNavBar from "@/components/layout/MobileNavBar";
 import FloatingCartButton from "@/components/common/FloatingCartButton";
 import BackToTopButton from "@/components/common/BackToTopButton";
-import { AuthProvider } from "@/context/AuthContext";
-import { CartProvider } from "@/context/CartContext";
-import ClientOnly from "@/components/common/ClientOnly";
 
 export const metadata = {
   title: "Prashasak Samiti - Religious Products",
   description: "Shop for authentic religious and spiritual products - Puja items, Ganesh idols, and cow dung products",
 };
 
-export const viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 5,
-};
-
-export default function RootLayout({ children }) {
+export default function UserLayout({ children }) {
   return (
-    <html lang="en">
-      <body
-        className={`antialiased bg-pattern-dots font-sans`}
-        suppressHydrationWarning={true} // Suppress hydration warnings for body attributes
-      >
-        <ClientOnly>
-          <AuthProvider>
-            <CartProvider>
-              <div className="flex flex-col min-h-screen">
-                <Header />
-                <main className="flex-grow">
-                  {children}
-                </main>
-                <Footer />
-                <MobileNavBar />
-                <FloatingCartButton />
-                <BackToTopButton />
-              </div>
-            </CartProvider>
-          </AuthProvider>
-        </ClientOnly>
-      </body>
-    </html>
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      <main className="flex-grow">
+        {children}
+      </main>
+      <Footer />
+      <MobileNavBar />
+      <FloatingCartButton />
+      <BackToTopButton />
+    </div>
   );
 }

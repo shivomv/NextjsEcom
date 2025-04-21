@@ -99,12 +99,16 @@ export default function OrderSuccessPage() {
               <h1 className="text-2xl font-bold text-gray-900 mb-4">Something went wrong</h1>
               <p className="text-gray-600 mb-6">{error}</p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link
-                  href="/account/orders"
+                <button
+                  onClick={() => {
+                    // Prefetch the orders page data before navigating
+                    router.prefetch('/account/orders');
+                    router.push('/account/orders');
+                  }}
                   className="bg-primary text-white px-6 py-3 rounded-md hover:bg-primary-dark transition-colors"
                 >
                   View My Orders
-                </Link>
+                </button>
                 <Link
                   href="/"
                   className="border border-gray-300 px-6 py-3 rounded-md hover:bg-gray-50 transition-colors"
@@ -134,12 +138,16 @@ export default function OrderSuccessPage() {
               <h1 className="text-2xl font-bold text-gray-900 mb-4">Thank You for Your Order!</h1>
               <p className="text-gray-600 mb-6">Your order has been placed successfully.</p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link
-                  href="/account/orders"
+                <button
+                  onClick={() => {
+                    // Prefetch the orders page data before navigating
+                    router.prefetch('/account/orders');
+                    router.push('/account/orders');
+                  }}
                   className="bg-primary text-white px-6 py-3 rounded-md hover:bg-primary-dark transition-colors"
                 >
                   View My Orders
-                </Link>
+                </button>
                 <Link
                   href="/"
                   className="border border-gray-300 px-6 py-3 rounded-md hover:bg-gray-50 transition-colors"
@@ -265,12 +273,17 @@ export default function OrderSuccessPage() {
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
-            <Link
-              href="/account/orders"
+            <button
+              onClick={() => {
+                // Prefetch the orders page data before navigating
+                // This helps reduce the perceived loading time
+                router.prefetch('/account/orders');
+                router.push('/account/orders');
+              }}
               className="bg-primary text-white px-6 py-3 rounded-md text-center hover:bg-primary-dark transition-colors"
             >
               View My Orders
-            </Link>
+            </button>
             <Link
               href="/"
               className="border border-gray-300 px-6 py-3 rounded-md text-center hover:bg-gray-50 transition-colors"

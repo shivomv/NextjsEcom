@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import SalesChart from '@/components/admin/SalesChart';
 
 export default function AdminDashboardPage() {
   const { user, isAuthenticated, isAdmin } = useAuth();
@@ -15,9 +16,17 @@ export default function AdminDashboardPage() {
     totalRevenue: 0,
     totalCustomers: 0,
     totalProducts: 0,
+    periodRevenue: 0,
+    growth: {
+      orders: 0,
+      revenue: 0,
+      customers: 0,
+      products: 0
+    },
     recentOrders: [],
     lowStockProducts: [],
-    salesData: []
+    salesData: [],
+    period: 'week'
   });
 
   useEffect(() => {
@@ -37,86 +46,100 @@ export default function AdminDashboardPage() {
       try {
         setLoading(true);
 
-        // In a real application, you would fetch this data from your API
-        // For now, we'll use mock data
+        if (!user?.token) {
+          console.error('No auth token available');
+          setLoading(false);
+          return;
+        }
 
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Fetch dashboard statistics
+        const statsResponse = await fetch('/api/admin/dashboard/stats', {
+          headers: {
+            'Authorization': `Bearer ${user.token}`
+          }
+        });
 
+        if (!statsResponse.ok) {
+          throw new Error('Failed to fetch dashboard statistics');
+        }
+
+        const statsData = await statsResponse.json();
+
+        // Fetch recent orders
+        const ordersResponse = await fetch('/api/admin/orders/recent?limit=5', {
+          headers: {
+            'Authorization': `Bearer ${user.token}`
+          }
+        });
+
+        if (!ordersResponse.ok) {
+          throw new Error('Failed to fetch recent orders');
+        }
+
+        const ordersData = await ordersResponse.json();
+
+        // Fetch low stock products
+        const productsResponse = await fetch('/api/admin/products/low-stock?limit=3&threshold=10', {
+          headers: {
+            'Authorization': `Bearer ${user.token}`
+          }
+        });
+
+        if (!productsResponse.ok) {
+          throw new Error('Failed to fetch low stock products');
+        }
+
+        const productsData = await productsResponse.json();
+
+        // Fetch revenue data for chart
+        const revenueResponse = await fetch('/api/admin/orders/revenue?period=week', {
+          headers: {
+            'Authorization': `Bearer ${user.token}`
+          }
+        });
+
+        if (!revenueResponse.ok) {
+          throw new Error('Failed to fetch revenue data');
+        }
+
+        const revenueData = await revenueResponse.json();
+
+        // Format recent orders data
+        const formattedOrders = ordersData.orders.map(order => ({
+          id: order._id,
+          orderNumber: order.orderNumber || order._id.substring(0, 8),
+          customer: order.user?.name || 'Unknown Customer',
+          date: order.createdAt,
+          status: order.status.toLowerCase(),
+          total: order.totalPrice || 0
+        }));
+
+        // Format low stock products data
+        const formattedProducts = productsData.products.map(product => ({
+          id: product._id,
+          name: product.name,
+          stock: product.countInStock,
+          threshold: 10, // Default threshold
+          image: product.image || '/images/placeholder.jpg'
+        }));
+
+        // Set all the data
         setStats({
-          totalOrders: 156,
-          totalRevenue: 245699,
-          totalCustomers: 89,
-          totalProducts: 124,
-          recentOrders: [
-            {
-              id: 'ORD123456789',
-              customer: 'John Doe',
-              date: '2023-10-15',
-              status: 'delivered',
-              total: 2499,
-            },
-            {
-              id: 'ORD987654321',
-              customer: 'Jane Smith',
-              date: '2023-10-14',
-              status: 'processing',
-              total: 1598,
-            },
-            {
-              id: 'ORD456789123',
-              customer: 'Amit Patel',
-              date: '2023-10-13',
-              status: 'shipped',
-              total: 4299,
-            },
-            {
-              id: 'ORD789123456',
-              customer: 'Priya Sharma',
-              date: '2023-10-12',
-              status: 'processing',
-              total: 899,
-            },
-            {
-              id: 'ORD321654987',
-              customer: 'Rahul Kumar',
-              date: '2023-10-11',
-              status: 'delivered',
-              total: 1299,
-            },
-          ],
-          lowStockProducts: [
-            {
-              id: 1,
-              name: 'Brass Ganesh Idol',
-              stock: 3,
-              threshold: 5,
-              image: '/images/products/ganesh-idol.jpg',
-            },
-            {
-              id: 2,
-              name: 'Pure Cow Ghee',
-              stock: 2,
-              threshold: 10,
-              image: '/images/products/cow-ghee.jpg',
-            },
-            {
-              id: 3,
-              name: 'Rudraksha Mala',
-              stock: 4,
-              threshold: 5,
-              image: '/images/products/rudraksha-mala.jpg',
-            },
-          ],
-          salesData: [
-            { date: '2023-10-09', revenue: 12500 },
-            { date: '2023-10-10', revenue: 15800 },
-            { date: '2023-10-11', revenue: 9600 },
-            { date: '2023-10-12', revenue: 14200 },
-            { date: '2023-10-13', revenue: 18900 },
-            { date: '2023-10-14', revenue: 21500 },
-            { date: '2023-10-15', revenue: 16700 },
-          ],
+          totalOrders: statsData.totalOrders || 0,
+          totalRevenue: statsData.totalRevenue || 0,
+          totalCustomers: statsData.totalCustomers || 0,
+          totalProducts: statsData.totalProducts || 0,
+          periodRevenue: revenueData.periodRevenue || 0,
+          growth: statsData.growth || {
+            orders: 0,
+            revenue: 0,
+            customers: 0,
+            products: 0
+          },
+          recentOrders: formattedOrders,
+          lowStockProducts: formattedProducts,
+          salesData: revenueData.dailyRevenue || [],
+          period: revenueData.period || 'week'
         });
 
         setLoading(false);
@@ -127,7 +150,94 @@ export default function AdminDashboardPage() {
     };
 
     fetchDashboardData();
-  }, [isAuthenticated, isAdmin, router]);
+  }, [isAuthenticated, isAdmin, router, user?.token]);
+
+  // Handle period change for sales chart
+  const handlePeriodChange = async (period) => {
+    if (period === stats.period) return;
+
+    try {
+      setLoading(true);
+
+      // Fetch revenue data for the selected period
+      const revenueResponse = await fetch(`/api/admin/orders/revenue?period=${period}`, {
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      });
+
+      if (!revenueResponse.ok) {
+        throw new Error('Failed to fetch revenue data');
+      }
+
+      const revenueData = await revenueResponse.json();
+
+      // Update the sales data, period revenue, and period
+      setStats(prevStats => ({
+        ...prevStats,
+        salesData: revenueData.dailyRevenue || [],
+        periodRevenue: revenueData.periodRevenue || 0,
+        period: period
+      }));
+
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching revenue data:', error);
+      setLoading(false);
+    }
+  };
+
+  // Handle custom date range change
+  const handleDateRangeChange = async (startDate, endDate) => {
+    if (!startDate || !endDate) return;
+
+    try {
+      setLoading(true);
+
+      // Format dates for API request
+      const formattedStartDate = startDate.toISOString().split('T')[0];
+      const formattedEndDate = endDate.toISOString().split('T')[0];
+
+      // Fetch revenue data for the custom date range
+      const revenueResponse = await fetch(
+        `/api/admin/orders/revenue?startDate=${formattedStartDate}&endDate=${formattedEndDate}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${user.token}`
+          }
+        }
+      );
+
+      if (!revenueResponse.ok) {
+        throw new Error('Failed to fetch revenue data for custom date range');
+      }
+
+      const revenueData = await revenueResponse.json();
+
+      // Update the sales data and period revenue
+      setStats(prevStats => ({
+        ...prevStats,
+        salesData: revenueData.dailyRevenue || [],
+        periodRevenue: revenueData.periodRevenue || 0,
+        period: 'custom' // Set period to custom
+      }));
+
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching revenue data for custom date range:', error);
+      setLoading(false);
+    }
+  };
+
+  // Format date helper
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
 
   // Status badge component
   const StatusBadge = ({ status }) => {
@@ -189,7 +299,11 @@ export default function AdminDashboardPage() {
           </div>
           <div className="flex items-baseline">
             <p className="text-2xl font-semibold text-gray-900">{stats.totalOrders}</p>
-            <p className="ml-2 text-sm text-green-600 font-medium">+12.5%</p>
+            {parseFloat(stats.growth.orders) !== 0 && (
+              <p className={`ml-2 text-sm font-medium ${parseFloat(stats.growth.orders) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {parseFloat(stats.growth.orders) >= 0 ? '+' : ''}{stats.growth.orders}%
+              </p>
+            )}
           </div>
           <p className="text-xs text-gray-500 mt-1">Compared to last month</p>
         </div>
@@ -205,7 +319,11 @@ export default function AdminDashboardPage() {
           </div>
           <div className="flex items-baseline">
             <p className="text-2xl font-semibold text-gray-900">₹{stats.totalRevenue.toLocaleString()}</p>
-            <p className="ml-2 text-sm text-green-600 font-medium">+8.2%</p>
+            {parseFloat(stats.growth.revenue) !== 0 && (
+              <p className={`ml-2 text-sm font-medium ${parseFloat(stats.growth.revenue) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {parseFloat(stats.growth.revenue) >= 0 ? '+' : ''}{stats.growth.revenue}%
+              </p>
+            )}
           </div>
           <p className="text-xs text-gray-500 mt-1">Compared to last month</p>
         </div>
@@ -221,7 +339,11 @@ export default function AdminDashboardPage() {
           </div>
           <div className="flex items-baseline">
             <p className="text-2xl font-semibold text-gray-900">{stats.totalCustomers}</p>
-            <p className="ml-2 text-sm text-green-600 font-medium">+5.8%</p>
+            {parseFloat(stats.growth.customers) !== 0 && (
+              <p className={`ml-2 text-sm font-medium ${parseFloat(stats.growth.customers) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {parseFloat(stats.growth.customers) >= 0 ? '+' : ''}{stats.growth.customers}%
+              </p>
+            )}
           </div>
           <p className="text-xs text-gray-500 mt-1">Compared to last month</p>
         </div>
@@ -237,7 +359,11 @@ export default function AdminDashboardPage() {
           </div>
           <div className="flex items-baseline">
             <p className="text-2xl font-semibold text-gray-900">{stats.totalProducts}</p>
-            <p className="ml-2 text-sm text-green-600 font-medium">+3.2%</p>
+            {parseFloat(stats.growth.products) !== 0 && (
+              <p className={`ml-2 text-sm font-medium ${parseFloat(stats.growth.products) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {parseFloat(stats.growth.products) >= 0 ? '+' : ''}{stats.growth.products}%
+              </p>
+            )}
           </div>
           <p className="text-xs text-gray-500 mt-1">Compared to last month</p>
         </div>
@@ -245,39 +371,71 @@ export default function AdminDashboardPage() {
 
       {/* Sales Chart */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-gray-900">Sales Overview</h3>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Sales Overview</h3>
+            <p className="text-2xl font-bold mt-1">
+              ₹{stats.periodRevenue ? stats.periodRevenue.toLocaleString() : '0'}
+              <span className="text-sm font-normal text-gray-500 ml-2">
+                {stats.period === 'week' ? 'This Week' :
+                 stats.period === 'month' ? 'This Month' :
+                 stats.period === 'year' ? 'This Year' :
+                 stats.period === 'custom' ? 'Custom Range' : 'This Week'}
+              </span>
+            </p>
+          </div>
           <div className="flex items-center space-x-2">
-            <button className="px-3 py-1 text-sm bg-primary text-white rounded-md">Weekly</button>
-            <button className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded-md">Monthly</button>
-            <button className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded-md">Yearly</button>
+            <button
+              onClick={() => handlePeriodChange('week')}
+              className={`px-3 py-1 text-sm rounded-md ${stats.period === 'week' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+            >
+              Weekly
+            </button>
+            <button
+              onClick={() => handlePeriodChange('month')}
+              className={`px-3 py-1 text-sm rounded-md ${stats.period === 'month' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => handlePeriodChange('year')}
+              className={`px-3 py-1 text-sm rounded-md ${stats.period === 'year' ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+            >
+              Yearly
+            </button>
           </div>
         </div>
-        <div className="h-64 relative">
-          {/* This would be a chart in a real application */}
-          <div className="absolute inset-0 flex items-end">
-            {stats.salesData.map((day, index) => (
-              <div key={index} className="flex-1 flex flex-col items-center">
-                <div
-                  className="w-full bg-primary-light rounded-t-sm"
-                  style={{
-                    height: `${(day.revenue / 25000) * 100}%`,
-                    maxHeight: '90%',
-                    backgroundColor: 'rgba(102, 2, 194, 0.2)'
-                  }}
-                ></div>
-                <div className="text-xs text-gray-500 mt-2">{new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}</div>
+
+        <div className="mt-6 border-t border-gray-100 pt-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center">
+              <div className="w-3 h-3 rounded-full mr-2 bg-primary"></div>
+              <span className="text-sm text-gray-600">Revenue</span>
+            </div>
+            {stats.growth && (
+              <div className="text-sm">
+                <span className={`font-medium ${parseFloat(stats.growth.revenue) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {parseFloat(stats.growth.revenue) >= 0 ? '+' : ''}{stats.growth.revenue}%
+                </span>
+                <span className="text-gray-500 ml-1">vs previous period</span>
               </div>
-            ))}
+            )}
           </div>
-          <div className="absolute inset-y-0 left-0 flex flex-col justify-between text-xs text-gray-500">
-            <span>₹25k</span>
-            <span>₹20k</span>
-            <span>₹15k</span>
-            <span>₹10k</span>
-            <span>₹5k</span>
-            <span>₹0</span>
-          </div>
+        </div>
+
+        {/* Chart visualization */}
+        <div className="mt-4">
+          {stats.salesData && stats.salesData.length > 0 ? (
+            <SalesChart
+              salesData={stats.salesData}
+              period={stats.period}
+              onDateRangeChange={handleDateRangeChange}
+            />
+          ) : (
+            <div className="h-64 w-full flex items-center justify-center text-gray-500">
+              No sales data available for this period
+            </div>
+          )}
         </div>
       </div>
 
@@ -318,14 +476,14 @@ export default function AdminDashboardPage() {
                   <tr key={order.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-primary">
                       <Link href={`/admin/orders/${order.id}`} className="hover:underline">
-                        {order.id}
+                        {order.orderNumber || order.id.substring(0, 8)}
                       </Link>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {order.customer}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(order.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                      {formatDate(order.date)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <StatusBadge status={order.status} />
@@ -339,6 +497,7 @@ export default function AdminDashboardPage() {
             </table>
           </div>
         </div>
+
 
         {/* Low Stock Products */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">

@@ -1,9 +1,37 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from "next/link";
 import ImageWithFallback from "@/components/common/ImageWithFallback";
+import { useCategories } from '@/context/CategoryContext';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 export default function Home() {
-  // Mock data for featured products
-  const featuredProducts = [
+  const { parentCategories, loading: categoriesLoading } = useCategories();
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch featured products
+  useEffect(() => {
+    const fetchFeaturedProducts = async () => {
+      try {
+        const response = await fetch('/api/products?sort=rating&limit=4');
+        if (response.ok) {
+          const data = await response.json();
+          setFeaturedProducts(data.products || []);
+        }
+      } catch (error) {
+        console.error('Error fetching featured products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFeaturedProducts();
+  }, []);
+
+  // Fallback featured products
+  const mockProducts = [
     {
       id: 1,
       name: "Brass Puja Thali Set",
@@ -46,8 +74,8 @@ export default function Home() {
     },
   ];
 
-  // Mock data for categories
-  const categories = [
+  // Fallback categories
+  const fallbackCategories = [
     {
       id: 1,
       name: "Puja Items",
@@ -73,6 +101,9 @@ export default function Home() {
       slug: "spiritual-books"
     },
   ];
+
+  // Use real data or fallback to mock data
+  const displayProducts = featuredProducts.length > 0 ? featuredProducts : mockProducts;
 
   return (
     <div className="min-h-screen pb-24 md:pb-0">
@@ -111,28 +142,34 @@ export default function Home() {
           <div className="w-24 h-1 bg-gradient-purple-pink mx-auto rounded-full"></div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-          {categories.map((category) => (
-            <Link
-              href={`/category/${category.slug}`}
-              key={category.id}
-              className="group relative overflow-hidden rounded-lg shadow-md transition-transform hover:scale-105"
-            >
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent z-10"></div>
-              <div className="relative h-40 md:h-52 w-full">
-                <ImageWithFallback
-                  src={category.image}
-                  alt={category.name}
-                  fill
-                  className="object-cover transition-transform group-hover:scale-110 duration-500"
-                />
-              </div>
-              <h3 className="absolute bottom-3 left-0 right-0 text-center text-white font-bold text-lg z-20">
-                {category.name}
-              </h3>
-            </Link>
-          ))}
-        </div>
+        {categoriesLoading ? (
+          <div className="flex justify-center py-12">
+            <LoadingSpinner size="lg" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            {(parentCategories.length > 0 ? parentCategories : fallbackCategories).map((category) => (
+              <Link
+                href={`/category/${category.slug}`}
+                key={category._id || category.id}
+                className="group relative overflow-hidden rounded-lg shadow-md transition-transform hover:scale-105"
+              >
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent z-10"></div>
+                <div className="relative h-40 md:h-52 w-full">
+                  <ImageWithFallback
+                    src={category.image}
+                    alt={category.name}
+                    fill
+                    className="object-cover transition-transform group-hover:scale-110 duration-500"
+                  />
+                </div>
+                <h3 className="absolute bottom-3 left-0 right-0 text-center text-white font-bold text-lg z-20">
+                  {category.name}
+                </h3>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Featured Products Section */}
@@ -142,59 +179,65 @@ export default function Home() {
           <div className="w-24 h-1 bg-gradient-pink-orange mx-auto rounded-full"></div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featuredProducts.map((product) => (
-            <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow">
-              <Link href={`/products/${product.slug}`} className="block relative h-48 overflow-hidden">
-                <ImageWithFallback
-                  src={product.image}
-                  alt={product.name}
-                  fill
-                  className="object-cover transition-transform hover:scale-110 duration-500"
-                />
-                {product.originalPrice > product.price && (
-                  <div className="absolute top-2 left-2 bg-gradient-pink-orange text-white text-xs px-3 py-1.5 rounded-full font-medium shadow-md border border-white">
-                    {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
-                  </div>
-                )}
-              </Link>
-
-              <div className="p-4">
-                <Link href={`/products/${product.slug}`}>
-                  <h3 className="text-lg font-bold mb-1 hover:text-gradient-purple-pink transition-colors line-clamp-2">
-                    {product.name}
-                  </h3>
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <LoadingSpinner size="lg" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {displayProducts.map((product) => (
+              <div key={product._id || product.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow">
+                <Link href={`/products/${product.slug}`} className="block relative h-48 overflow-hidden">
+                  <ImageWithFallback
+                    src={product.image || (product.images && product.images[0])}
+                    alt={product.name}
+                    fill
+                    className="object-cover transition-transform hover:scale-110 duration-500"
+                  />
+                  {product.originalPrice > product.price && (
+                    <div className="absolute top-2 left-2 bg-gradient-pink-orange text-white text-xs px-3 py-1.5 rounded-full font-medium shadow-md border border-white">
+                      {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
+                    </div>
+                  )}
                 </Link>
 
-                <div className="flex items-center mb-2">
-                  <div className="flex text-gradient-pink-orange">
-                    {[...Array(5)].map((_, i) => (
-                      <svg key={i} xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 ${i < Math.floor(product.rating) ? 'fill-current' : 'stroke-current fill-none'}`} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                <div className="p-4">
+                  <Link href={`/products/${product.slug}`}>
+                    <h3 className="text-lg font-bold mb-1 hover:text-gradient-purple-pink transition-colors line-clamp-2">
+                      {product.name}
+                    </h3>
+                  </Link>
+
+                  <div className="flex items-center mb-2">
+                    <div className="flex text-gradient-pink-orange">
+                      {[...Array(5)].map((_, i) => (
+                        <svg key={i} xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 ${i < Math.floor(product.rating || product.ratings || 0) ? 'fill-current' : 'stroke-current fill-none'}`} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                        </svg>
+                      ))}
+                      <span className="text-xs ml-1 text-text-light">({product.reviews || product.numReviews || 0})</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-lg font-bold">₹{product.price}</span>
+                      {product.originalPrice > product.price && (
+                        <span className="text-sm text-text-light line-through ml-2">₹{product.originalPrice}</span>
+                      )}
+                    </div>
+
+                    <button className="bg-gradient-purple-pink hover:opacity-90 text-white p-2 rounded-full shadow-md transition-all transform hover:scale-110">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                       </svg>
-                    ))}
-                    <span className="text-xs ml-1 text-text-light">({product.reviews})</span>
+                    </button>
                   </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-lg font-bold">₹{product.price}</span>
-                    {product.originalPrice > product.price && (
-                      <span className="text-sm text-text-light line-through ml-2">₹{product.originalPrice}</span>
-                    )}
-                  </div>
-
-                  <button className="bg-gradient-purple-pink hover:opacity-90 text-white p-2 rounded-full shadow-md transition-all transform hover:scale-110">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                  </button>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         <div className="text-center mt-10">
           <Link
@@ -229,7 +272,7 @@ export default function Home() {
               </p>
               <Link
                 href="/products?category=navratri-collection"
-                className="bg-white text-gradient-purple-pink px-8 py-3 rounded-full font-medium text-lg transition-all transform hover:scale-105 shadow-lg"
+                className="bg-white-900 text-gradient-purple-pink px-8 py-3 rounded-full font-medium text-lg transition-all transform hover:scale-105 shadow-lg"
               >
                 Shop the Collection
               </Link>

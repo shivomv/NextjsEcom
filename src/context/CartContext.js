@@ -112,11 +112,16 @@ export const CartProvider = ({ children }) => {
       return;
     }
 
+    // Mark as initialized to prevent hydration issues
+    dispatch({ type: 'INITIALIZE_CART' });
+
+    // Skip if already loaded
+    if (state.cartItems.length > 0) {
+      return;
+    }
+
     const fetchCart = async () => {
       try {
-        // Mark as initialized to prevent hydration issues
-        dispatch({ type: 'INITIALIZE_CART' });
-
         // If authenticated, fetch cart from API
         if (isAuthenticated && user) {
           setLoading(true);
@@ -125,7 +130,7 @@ export const CartProvider = ({ children }) => {
             const response = await api.cart.getCart();
             const data = response.data;
 
-            if (data && data.cartItems && Array.isArray(data.cartItems)) {
+            if (data && data.cartItems && Array.isArray(data.cartItems) && data.cartItems.length > 0) {
               // Replace the entire cart with the server data
               dispatch({
                 type: 'CART_CLEAR_ITEMS',
@@ -149,57 +154,15 @@ export const CartProvider = ({ children }) => {
             }
           } catch (error) {
             console.error('Error fetching cart from API:', error);
-            // Continue with empty cart or localStorage fallback
+            // Fall back to localStorage on error
+            loadFromLocalStorage();
           } finally {
             setLoading(false);
           }
         }
         // Otherwise, load from localStorage
         else {
-          try {
-            const cartItemsFromStorage = localStorage.getItem('cartItems')
-              ? JSON.parse(localStorage.getItem('cartItems'))
-              : [];
-            const shippingAddressFromStorage = localStorage.getItem('shippingAddress')
-              ? JSON.parse(localStorage.getItem('shippingAddress'))
-              : {};
-            const paymentMethodFromStorage = localStorage.getItem('paymentMethod')
-              ? JSON.parse(localStorage.getItem('paymentMethod'))
-              : '';
-
-            if (cartItemsFromStorage.length > 0) {
-              // Clear cart first to avoid duplicates
-              dispatch({
-                type: 'CART_CLEAR_ITEMS',
-              });
-
-              // Add each item individually to ensure proper format
-              cartItemsFromStorage.forEach(item => {
-                if (item && item.product) {
-                  dispatch({
-                    type: 'CART_ADD_ITEM',
-                    payload: item,
-                  });
-                }
-              });
-            }
-
-            if (Object.keys(shippingAddressFromStorage).length > 0) {
-              dispatch({
-                type: 'CART_SAVE_SHIPPING_ADDRESS',
-                payload: shippingAddressFromStorage,
-              });
-            }
-
-            if (paymentMethodFromStorage) {
-              dispatch({
-                type: 'CART_SAVE_PAYMENT_METHOD',
-                payload: paymentMethodFromStorage,
-              });
-            }
-          } catch (storageError) {
-            console.error('Error loading from localStorage:', storageError);
-          }
+          loadFromLocalStorage();
         }
       } catch (error) {
         console.error('Error fetching cart:', error);
@@ -207,8 +170,55 @@ export const CartProvider = ({ children }) => {
       }
     };
 
+    const loadFromLocalStorage = () => {
+      try {
+        const cartItemsFromStorage = localStorage.getItem('cartItems')
+          ? JSON.parse(localStorage.getItem('cartItems'))
+          : [];
+        const shippingAddressFromStorage = localStorage.getItem('shippingAddress')
+          ? JSON.parse(localStorage.getItem('shippingAddress'))
+          : {};
+        const paymentMethodFromStorage = localStorage.getItem('paymentMethod')
+          ? JSON.parse(localStorage.getItem('paymentMethod'))
+          : '';
+
+        if (cartItemsFromStorage.length > 0) {
+          // Clear cart first to avoid duplicates
+          dispatch({
+            type: 'CART_CLEAR_ITEMS',
+          });
+
+          // Add each item individually to ensure proper format
+          cartItemsFromStorage.forEach(item => {
+            if (item && item.product) {
+              dispatch({
+                type: 'CART_ADD_ITEM',
+                payload: item,
+              });
+            }
+          });
+        }
+
+        if (Object.keys(shippingAddressFromStorage).length > 0) {
+          dispatch({
+            type: 'CART_SAVE_SHIPPING_ADDRESS',
+            payload: shippingAddressFromStorage,
+          });
+        }
+
+        if (paymentMethodFromStorage) {
+          dispatch({
+            type: 'CART_SAVE_PAYMENT_METHOD',
+            payload: paymentMethodFromStorage,
+          });
+        }
+      } catch (storageError) {
+        console.error('Error loading from localStorage:', storageError);
+      }
+    };
+
     fetchCart();
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, state.cartItems.length, dispatch]);
 
   // Save cart to API or localStorage whenever it changes - client-side only
   useEffect(() => {
@@ -241,29 +251,29 @@ export const CartProvider = ({ children }) => {
   // Add item to cart
   const addToCart = async (product, qty) => {
     try {
-      // If authenticated, add to cart via API
-      if (isAuthenticated) {
-        setLoading(true);
-        await api.cart.addToCart(product._id, qty);
-      }
+      setLoading(true);
 
-      // Update local state
+      // Update local state first for immediate UI feedback
       dispatch({
         type: 'CART_ADD_ITEM',
         payload: {
           product: product._id,
           name: product.name,
           hindiName: product.hindiName || product.name,
-          image: product.images[0],
+          image: Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : product.image,
           price: product.price,
           stock: product.stock,
           qty,
         },
       });
 
-      setLoading(false);
+      // If authenticated, sync with server
+      if (isAuthenticated) {
+        await api.cart.addToCart(product._id, qty);
+      }
     } catch (error) {
       console.error('Error adding to cart:', error);
+    } finally {
       setLoading(false);
     }
   };
@@ -271,21 +281,21 @@ export const CartProvider = ({ children }) => {
   // Remove item from cart
   const removeFromCart = async (id) => {
     try {
-      // If authenticated, remove from cart via API
-      if (isAuthenticated) {
-        setLoading(true);
-        await api.cart.removeFromCart(id);
-      }
+      setLoading(true);
 
-      // Update local state
+      // Update local state first for immediate UI feedback
       dispatch({
         type: 'CART_REMOVE_ITEM',
         payload: id,
       });
 
-      setLoading(false);
+      // If authenticated, sync with server
+      if (isAuthenticated) {
+        await api.cart.removeFromCart(id);
+      }
     } catch (error) {
       console.error('Error removing from cart:', error);
+    } finally {
       setLoading(false);
     }
   };
@@ -336,26 +346,46 @@ export const CartProvider = ({ children }) => {
           const data = response.data;
 
           if (data && data.cartItems && Array.isArray(data.cartItems)) {
-            // Replace the entire cart with the server data
-            dispatch({
-              type: 'CART_CLEAR_ITEMS',
-            });
+            // Check if cart has actually changed to avoid unnecessary updates
+            const serverCartItemIds = data.cartItems.map(item => item.product.toString());
+            const localCartItemIds = state.cartItems.map(item =>
+              typeof item.product === 'object' ? item.product._id.toString() : item.product.toString()
+            );
 
-            // Add each item individually to ensure proper format
-            data.cartItems.forEach(item => {
-              dispatch({
-                type: 'CART_ADD_ITEM',
-                payload: {
-                  product: item.product,
-                  name: item.name,
-                  hindiName: item.hindiName || item.name,
-                  image: item.image,
-                  price: item.price,
-                  stock: item.qty > 0 ? item.qty * 2 : 10, // Fallback stock value
-                  qty: item.qty,
-                },
+            // Check if items or quantities have changed
+            const hasCartChanged =
+              serverCartItemIds.length !== localCartItemIds.length ||
+              !serverCartItemIds.every(id => localCartItemIds.includes(id)) ||
+              data.cartItems.some(serverItem => {
+                const localItem = state.cartItems.find(item => {
+                  const localId = typeof item.product === 'object' ? item.product._id.toString() : item.product.toString();
+                  return localId === serverItem.product.toString();
+                });
+                return !localItem || localItem.qty !== serverItem.qty;
               });
-            });
+
+            if (hasCartChanged) {
+              // Replace the entire cart with the server data
+              dispatch({
+                type: 'CART_CLEAR_ITEMS',
+              });
+
+              // Add each item individually to ensure proper format
+              data.cartItems.forEach(item => {
+                dispatch({
+                  type: 'CART_ADD_ITEM',
+                  payload: {
+                    product: item.product,
+                    name: item.name,
+                    hindiName: item.hindiName || item.name,
+                    image: item.image,
+                    price: item.price,
+                    stock: item.qty > 0 ? item.qty * 2 : 10, // Fallback stock value
+                    qty: item.qty,
+                  },
+                });
+              });
+            }
           }
         } catch (error) {
           console.error('Error refreshing cart from API:', error);
@@ -369,7 +399,17 @@ export const CartProvider = ({ children }) => {
             ? JSON.parse(localStorage.getItem('cartItems'))
             : [];
 
-          if (cartItemsFromStorage.length > 0) {
+          // Only update if the localStorage cart is different from the current state
+          const storageIds = cartItemsFromStorage.map(item => item.product);
+          const stateIds = state.cartItems.map(item =>
+            typeof item.product === 'object' ? item.product._id : item.product
+          );
+
+          const hasChanged =
+            storageIds.length !== stateIds.length ||
+            !storageIds.every(id => stateIds.includes(id));
+
+          if (hasChanged && cartItemsFromStorage.length > 0) {
             // Clear cart first to avoid duplicates
             dispatch({
               type: 'CART_CLEAR_ITEMS',
