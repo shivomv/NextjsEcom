@@ -5,6 +5,7 @@ import Link from 'next/link';
 import ImageWithFallback from '@/components/common/ImageWithFallback';
 import { useCategories } from '@/context/CategoryContext';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import FilterButton from '@/components/products/FilterButton';
 
 // This is a dynamic page that will display products based on the category slug
 export default function CategoryPage({ params }) {
@@ -13,6 +14,8 @@ export default function CategoryPage({ params }) {
   const [category, setCategory] = useState(null);
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState([]);
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [activeSortOption, setActiveSortOption] = useState('popularity');
 
   // Fetch category data and products
   useEffect(() => {
@@ -343,29 +346,82 @@ export default function CategoryPage({ params }) {
         {/* Filters and Sorting */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div className="flex flex-wrap gap-2">
-            <button className="px-4 py-2 rounded-full bg-gradient-purple-pink text-white font-medium">
-              All Products
-            </button>
-            <button className="px-4 py-2 rounded-full bg-white text-text hover:bg-gray-100 transition-colors font-medium">
-              New Arrivals
-            </button>
-            <button className="px-4 py-2 rounded-full bg-white text-text hover:bg-gray-100 transition-colors font-medium">
-              Best Sellers
-            </button>
-            <button className="px-4 py-2 rounded-full bg-white text-text hover:bg-gray-100 transition-colors font-medium">
-              Featured
-            </button>
+            <FilterButton
+              label="All Products"
+              active={activeFilter === 'all'}
+              onSelect={(value) => setActiveFilter(value)}
+              options={[
+                { label: 'All Products', value: 'all' },
+                { label: 'In Stock Only', value: 'in-stock' },
+                { label: 'On Sale', value: 'on-sale' },
+              ]}
+              icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>}
+            />
+
+            <FilterButton
+              label="New Arrivals"
+              active={activeFilter === 'new'}
+              onSelect={(value) => setActiveFilter(value)}
+              options={[
+                { label: 'Last 7 Days', value: 'new-7' },
+                { label: 'Last 30 Days', value: 'new-30' },
+                { label: 'Last 90 Days', value: 'new' },
+              ]}
+              icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>}
+            />
+
+            <FilterButton
+              label="Best Sellers"
+              active={activeFilter === 'best-sellers'}
+              onSelect={(value) => setActiveFilter(value)}
+              options={[
+                { label: 'Top 10', value: 'best-10' },
+                { label: 'Top 50', value: 'best-50' },
+                { label: 'All Best Sellers', value: 'best-sellers' },
+              ]}
+              icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>}
+            />
+
+            <FilterButton
+              label="Featured"
+              active={activeFilter === 'featured'}
+              onSelect={(value) => setActiveFilter(value)}
+              options={[
+                { label: 'Editor\'s Choice', value: 'editors-choice' },
+                { label: 'Staff Picks', value: 'staff-picks' },
+                { label: 'All Featured', value: 'featured' },
+              ]}
+              icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+              </svg>}
+            />
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-text-light">Sort by:</span>
-            <select className="bg-white border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
-              <option>Popularity</option>
-              <option>Price: Low to High</option>
-              <option>Price: High to Low</option>
-              <option>Newest First</option>
-              <option>Rating</option>
-            </select>
+            <FilterButton
+              label={`Sort: ${activeSortOption === 'popularity' ? 'Popularity' :
+                      activeSortOption === 'price-asc' ? 'Price: Low to High' :
+                      activeSortOption === 'price-desc' ? 'Price: High to Low' :
+                      activeSortOption === 'newest' ? 'Newest First' : 'Rating'}`}
+              active={false}
+              onSelect={(value) => setActiveSortOption(value)}
+              options={[
+                { label: 'Popularity', value: 'popularity' },
+                { label: 'Price: Low to High', value: 'price-asc' },
+                { label: 'Price: High to Low', value: 'price-desc' },
+                { label: 'Newest First', value: 'newest' },
+                { label: 'Rating', value: 'rating' },
+              ]}
+              icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+              </svg>}
+            />
           </div>
         </div>
 
