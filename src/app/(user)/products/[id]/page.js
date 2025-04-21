@@ -11,7 +11,7 @@ import LoadingSpinner from '@/components/common/LoadingSpinner';
 import ProductCard from '@/components/products/ProductCard';
 
 export default function ProductDetailPage() {
-  const { slug } = useParams();
+  const { id } = useParams();
   const { addToCart } = useCart();
 
   const [product, setProduct] = useState(null);
@@ -29,14 +29,8 @@ export default function ProductDetailPage() {
         setLoading(true);
         setError(null);
 
-        const productData = await productAPI.getProductBySlug(slug);
+        const productData = await productAPI.getProductById(id);
         setProduct(productData);
-
-        // Redirect to ID-based URL if we're on a slug-based URL
-        if (productData._id && !slug.match(/^[0-9a-fA-F]{24}$/)) {
-          window.location.href = `/products/${productData._id}`;
-          return;
-        }
 
         // Fetch related products
         if (productData._id) {
@@ -51,10 +45,10 @@ export default function ProductDetailPage() {
       }
     };
 
-    if (slug) {
+    if (id) {
       fetchProduct();
     }
-  }, [slug]);
+  }, [id]);
 
   const handleQuantityChange = (e) => {
     const value = parseInt(e.target.value);

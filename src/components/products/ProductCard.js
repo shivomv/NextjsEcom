@@ -26,7 +26,7 @@ export default function ProductCard({ product }) {
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 border border-primary/10 hover:border-primary/30">
-      <Link href={`/products/${product.slug}`} className="block relative h-48 sm:h-56 overflow-hidden">
+      <Link href={`/products/${product._id}`} className="block relative h-48 sm:h-56 overflow-hidden">
         {product.images && product.images.length > 0 ? (
           <div className="relative w-full h-full">
             <Image
@@ -62,7 +62,7 @@ export default function ProductCard({ product }) {
       </Link>
 
       <div className="p-4 sm:p-5">
-        <Link href={`/products/${product.slug}`} className="block">
+        <Link href={`/products/${product._id}`} className="block">
           <h3 className="text-sm text-gradient-purple-pink font-medium flex items-center">
             <span className="w-1.5 h-1.5 rounded-full bg-gradient-purple-pink mr-1.5"></span>
             {product.category?.name || 'Religious Product'}

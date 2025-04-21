@@ -89,9 +89,13 @@ export const productAPI = {
     }
   },
 
-  // Get product by slug
+  // Get product by slug (legacy support)
   getProductBySlug: async (slug) => {
     try {
+      // Try to determine if the slug is actually an ID
+      if (slug && slug.match(/^[0-9a-fA-F]{24}$/)) {
+        return await productAPI.getProductById(slug);
+      }
       const { data } = await api.get(`/products/slug/${slug}`);
       return data;
     } catch (error) {
