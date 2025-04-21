@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-
-import LoadingSpinner from '@/components/common/LoadingSpinner';
-import CloudinaryImagePicker from '@/components/common/CloudinaryImagePicker';
 import { useAuth } from '@/context/AuthContext';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
+
+// Settings components
+import GeneralSettings from '@/components/admin/settings/GeneralSettings';
+import SocialMediaSettings from '@/components/admin/settings/SocialMediaSettings';
+import DeliveryAgenciesSettings from '@/components/admin/settings/DeliveryAgenciesSettings';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -48,26 +50,8 @@ export default function SettingsPage() {
     maintenanceMode: false,
   });
 
-  // Web pages state
-  const [webPages, setWebPages] = useState([]);
-
-  // Banners state
-  const [banners, setBanners] = useState([]);
-
   // Delivery agencies state
   const [deliveryAgencies, setDeliveryAgencies] = useState([]);
-
-  // Payment gateways state
-  const [paymentGateways, setPaymentGateways] = useState([]);
-
-  // Cloudinary settings
-  const [cloudinarySettings, setCloudinarySettings] = useState({
-    cloudName: '',
-    apiKey: '',
-    apiSecret: '',
-    uploadPreset: '',
-    folder: 'my-shop'
-  });
 
   useEffect(() => {
     setIsClient(true);
@@ -81,49 +65,24 @@ export default function SettingsPage() {
       try {
         setIsLoading(true);
 
-        // In a real application, you would fetch settings from your API
-        // For now, we'll use the default settings defined above
+        // Fetch general settings
+        const settingsResponse = await fetch('/api/admin/settings?format=object');
+        if (settingsResponse.ok) {
+          const settingsData = await settingsResponse.json();
+          if (Object.keys(settingsData).length > 0) {
+            setSettings(prevSettings => ({
+              ...prevSettings,
+              ...settingsData,
+            }));
+          }
+        }
 
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // In a real app, you would set the settings from the API response
-        // setSettings(data);
-
-        // Mock data for web pages
-        setWebPages([
-          { id: '1', title: 'About Us', slug: 'about-us', isActive: true, showInFooter: true, showInHeader: false },
-          { id: '2', title: 'Contact Us', slug: 'contact-us', isActive: true, showInFooter: true, showInHeader: false },
-          { id: '3', title: 'Terms & Conditions', slug: 'terms-conditions', isActive: true, showInFooter: true, showInHeader: false },
-          { id: '4', title: 'Privacy Policy', slug: 'privacy-policy', isActive: true, showInFooter: true, showInHeader: false },
-        ]);
-
-        // Mock data for banners
-        setBanners([
-          { id: '1', title: 'Home Banner 1', position: 'home_hero', isActive: true, image: 'https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg' },
-          { id: '2', title: 'Festival Special', position: 'home_middle', isActive: true, image: 'https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg' },
-        ]);
-
-        // Mock data for delivery agencies
-        setDeliveryAgencies([
-          { id: '1', name: 'Express Delivery', code: 'express', isActive: true, trackingUrl: 'https://express-delivery.com/track/{trackingId}' },
-          { id: '2', name: 'Standard Post', code: 'post', isActive: true, trackingUrl: 'https://standard-post.com/track/{trackingId}' },
-        ]);
-
-        // Mock data for payment gateways
-        setPaymentGateways([
-          { id: '1', name: 'Razorpay', code: 'razorpay', isActive: true, isDefault: true },
-          { id: '2', name: 'Cash on Delivery', code: 'cod', isActive: true, isDefault: false },
-        ]);
-
-        // Mock data for cloudinary settings
-        setCloudinarySettings({
-          cloudName: 'your-cloud-name',
-          apiKey: 'your-api-key',
-          apiSecret: '••••••••••••••••',
-          uploadPreset: 'my-shop-preset',
-          folder: 'my-shop'
-        });
+        // Fetch delivery agencies
+        const deliveryAgenciesResponse = await fetch('/api/admin/delivery-agencies');
+        if (deliveryAgenciesResponse.ok) {
+          const deliveryAgenciesData = await deliveryAgenciesResponse.json();
+          setDeliveryAgencies(deliveryAgenciesData);
+        }
 
         setIsLoading(false);
       } catch (error) {
@@ -138,76 +97,186 @@ export default function SettingsPage() {
     }
   }, [isAuthenticated, user]);
 
-  // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
+  // Handle general settings save
+  const handleGeneralSettingsSave = async (data) => {
     try {
       setIsSaving(true);
       setError(null);
       setSuccess(null);
 
-      // In a real application, you would save settings to your API
-      // For now, we'll just simulate a successful save
+      const response = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
 
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      setSuccess('Settings saved successfully!');
-      setIsSaving(false);
-
-      // Clear success message after 3 seconds
-      setTimeout(() => {
-        setSuccess(null);
-      }, 3000);
+      if (response.ok) {
+        setSettings({
+          ...settings,
+          ...data,
+        });
+        setSuccess('General settings saved successfully!');
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to save settings');
+      }
     } catch (error) {
-      console.error('Error saving settings:', error);
+      console.error('Error saving general settings:', error);
       setError('Failed to save settings. Please try again.');
+    } finally {
       setIsSaving(false);
+      // Clear success message after 3 seconds
+      if (!error) {
+        setTimeout(() => {
+          setSuccess(null);
+        }, 3000);
+      }
     }
   };
 
-  // Handle input change
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setSettings({
-      ...settings,
-      [name]: value,
-    });
+  // Handle social media settings save
+  const handleSocialMediaSave = async (data) => {
+    try {
+      setIsSaving(true);
+      setError(null);
+      setSuccess(null);
+
+      const response = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          socialMedia: data,
+        }),
+      });
+
+      if (response.ok) {
+        setSettings({
+          ...settings,
+          socialMedia: data,
+        });
+        setSuccess('Social media settings saved successfully!');
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to save social media settings');
+      }
+    } catch (error) {
+      console.error('Error saving social media settings:', error);
+      setError('Failed to save social media settings. Please try again.');
+    } finally {
+      setIsSaving(false);
+      // Clear success message after 3 seconds
+      if (!error) {
+        setTimeout(() => {
+          setSuccess(null);
+        }, 3000);
+      }
+    }
   };
 
-  // Handle nested input change
-  const handleNestedInputChange = (category, name, value) => {
-    setSettings({
-      ...settings,
-      [category]: {
-        ...settings[category],
-        [name]: value,
-      },
-    });
+
+
+  // Handle delivery agency save
+  const handleDeliveryAgencySave = async (data, id = null) => {
+    try {
+      setIsSaving(true);
+      setError(null);
+      setSuccess(null);
+
+      let response;
+      if (id) {
+        // Update existing delivery agency
+        response = await fetch(`/api/admin/delivery-agencies/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        });
+      } else {
+        // Create new delivery agency
+        response = await fetch('/api/admin/delivery-agencies', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        });
+      }
+
+      if (response.ok) {
+        const savedAgency = await response.json();
+        if (id) {
+          // Update existing delivery agency in state
+          setDeliveryAgencies(deliveryAgencies.map(agency => agency._id === id ? savedAgency : agency));
+        } else {
+          // Add new delivery agency to state
+          setDeliveryAgencies([...deliveryAgencies, savedAgency]);
+        }
+        setSuccess('Delivery agency saved successfully!');
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to save delivery agency');
+      }
+    } catch (error) {
+      console.error('Error saving delivery agency:', error);
+      setError('Failed to save delivery agency. Please try again.');
+    } finally {
+      setIsSaving(false);
+      // Clear success message after 3 seconds
+      if (!error) {
+        setTimeout(() => {
+          setSuccess(null);
+        }, 3000);
+      }
+    }
   };
 
-  // Handle checkbox change
-  const handleCheckboxChange = (e) => {
-    const { name, checked } = e.target;
-    setSettings({
-      ...settings,
-      [name]: checked,
-    });
+  // Handle delivery agency delete
+  const handleDeliveryAgencyDelete = async (id) => {
+    try {
+      setIsSaving(true);
+      setError(null);
+      setSuccess(null);
+
+      const response = await fetch(`/api/admin/delivery-agencies/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        // Remove delivery agency from state
+        setDeliveryAgencies(deliveryAgencies.filter(agency => agency._id !== id));
+        setSuccess('Delivery agency deleted successfully!');
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete delivery agency');
+      }
+    } catch (error) {
+      console.error('Error deleting delivery agency:', error);
+      setError('Failed to delete delivery agency. Please try again.');
+    } finally {
+      setIsSaving(false);
+      // Clear success message after 3 seconds
+      if (!error) {
+        setTimeout(() => {
+          setSuccess(null);
+        }, 3000);
+      }
+    }
   };
 
-  // Handle nested checkbox change
-  const handleNestedCheckboxChange = (category, name, checked) => {
-    setSettings({
-      ...settings,
-      [category]: {
-        ...settings[category],
-        [name]: checked,
-      },
-    });
-  };
 
-  // Loading state
+
+  // Redirect if not admin
+  useEffect(() => {
+    if (isClient && !loading && (!isAuthenticated || user?.role !== 'admin')) {
+      router.push('/login?redirect=/admin/settings');
+    }
+  }, [isClient, loading, isAuthenticated, user, router]);
+
   if (loading || !isClient) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -217,27 +286,25 @@ export default function SettingsPage() {
   }
 
   return (
-    <>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Store Settings</h1>
-        <p className="text-gray-600">Configure your store settings</p>
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">Settings</h1>
       </div>
 
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-          {error}
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6" role="alert">
+          <span className="block sm:inline">{error}</span>
         </div>
       )}
 
       {success && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
-          {success}
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-6" role="alert">
+          <span className="block sm:inline">{success}</span>
         </div>
       )}
 
-      {/* Tab Navigation */}
-      <div className="mb-6 border-b border-gray-200">
-        <nav className="flex -mb-px">
+      <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+        <nav className="flex overflow-x-auto">
           <button
             onClick={() => setActiveTab('general')}
             className={`py-4 px-6 text-sm font-medium ${
@@ -247,26 +314,6 @@ export default function SettingsPage() {
             }`}
           >
             General
-          </button>
-          <button
-            onClick={() => setActiveTab('webpages')}
-            className={`py-4 px-6 text-sm font-medium ${
-              activeTab === 'webpages'
-                ? 'border-b-2 border-primary text-primary'
-                : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            Web Pages
-          </button>
-          <button
-            onClick={() => setActiveTab('banners')}
-            className={`py-4 px-6 text-sm font-medium ${
-              activeTab === 'banners'
-                ? 'border-b-2 border-primary text-primary'
-                : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            Banners
           </button>
           <button
             onClick={() => setActiveTab('social')}
@@ -288,365 +335,35 @@ export default function SettingsPage() {
           >
             Delivery Agencies
           </button>
-          <button
-            onClick={() => setActiveTab('payment')}
-            className={`py-4 px-6 text-sm font-medium ${
-              activeTab === 'payment'
-                ? 'border-b-2 border-primary text-primary'
-                : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            Payment Gateways
-          </button>
-          <button
-            onClick={() => setActiveTab('cloudinary')}
-            className={`py-4 px-6 text-sm font-medium ${
-              activeTab === 'cloudinary'
-                ? 'border-b-2 border-primary text-primary'
-                : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            Cloudinary
-          </button>
         </nav>
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center items-center p-12">
-          <LoadingSpinner />
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit}>
-          <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-800">General Settings</h2>
-            </div>
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="siteName" className="block text-sm font-medium text-gray-700 mb-1">
-                  Site Name
-                </label>
-                <input
-                  type="text"
-                  id="siteName"
-                  name="siteName"
-                  value={settings.siteName}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="siteDescription" className="block text-sm font-medium text-gray-700 mb-1">
-                  Site Description
-                </label>
-                <input
-                  type="text"
-                  id="siteDescription"
-                  name="siteDescription"
-                  value={settings.siteDescription}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div>
-                <label htmlFor="contactEmail" className="block text-sm font-medium text-gray-700 mb-1">
-                  Contact Email
-                </label>
-                <input
-                  type="email"
-                  id="contactEmail"
-                  name="contactEmail"
-                  value={settings.contactEmail}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="contactPhone" className="block text-sm font-medium text-gray-700 mb-1">
-                  Contact Phone
-                </label>
-                <input
-                  type="text"
-                  id="contactPhone"
-                  name="contactPhone"
-                  value={settings.contactPhone}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
-                  Address
-                </label>
-                <textarea
-                  id="address"
-                  name="address"
-                  value={settings.address}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div className="md:col-span-2 flex items-center">
-                <input
-                  type="checkbox"
-                  id="maintenanceMode"
-                  name="maintenanceMode"
-                  checked={settings.maintenanceMode}
-                  onChange={handleCheckboxChange}
-                  className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-                />
-                <label htmlFor="maintenanceMode" className="ml-2 block text-sm text-gray-700">
-                  Enable Maintenance Mode
-                </label>
-              </div>
-            </div>
-          </div>
+      <div className="mt-6">
+        {activeTab === 'general' && (
+          <GeneralSettings
+            settings={settings}
+            onSave={handleGeneralSettingsSave}
+            isSaving={isSaving}
+          />
+        )}
 
-          <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-800">Payment Settings</h2>
-            </div>
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="taxRate" className="block text-sm font-medium text-gray-700 mb-1">
-                  Tax Rate (%)
-                </label>
-                <input
-                  type="number"
-                  id="taxRate"
-                  name="taxRate"
-                  value={settings.taxRate}
-                  onChange={handleInputChange}
-                  min="0"
-                  max="100"
-                  step="0.01"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div>
-                <label htmlFor="shippingFee" className="block text-sm font-medium text-gray-700 mb-1">
-                  Shipping Fee (₹)
-                </label>
-                <input
-                  type="number"
-                  id="shippingFee"
-                  name="shippingFee"
-                  value={settings.shippingFee}
-                  onChange={handleInputChange}
-                  min="0"
-                  step="1"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div>
-                <label htmlFor="freeShippingThreshold" className="block text-sm font-medium text-gray-700 mb-1">
-                  Free Shipping Threshold (₹)
-                </label>
-                <input
-                  type="number"
-                  id="freeShippingThreshold"
-                  name="freeShippingThreshold"
-                  value={settings.freeShippingThreshold}
-                  onChange={handleInputChange}
-                  min="0"
-                  step="1"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <p className="block text-sm font-medium text-gray-700 mb-2">
-                  Payment Gateways
-                </p>
-                <div className="space-y-2">
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="razorpay"
-                      checked={settings.enablePaymentGateways.razorpay}
-                      onChange={(e) => handleNestedCheckboxChange('enablePaymentGateways', 'razorpay', e.target.checked)}
-                      className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-                    />
-                    <label htmlFor="razorpay" className="ml-2 block text-sm text-gray-700">
-                      Razorpay
-                    </label>
-                  </div>
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="paypal"
-                      checked={settings.enablePaymentGateways.paypal}
-                      onChange={(e) => handleNestedCheckboxChange('enablePaymentGateways', 'paypal', e.target.checked)}
-                      className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-                    />
-                    <label htmlFor="paypal" className="ml-2 block text-sm text-gray-700">
-                      PayPal
-                    </label>
-                  </div>
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="cod"
-                      checked={settings.enablePaymentGateways.cod}
-                      onChange={(e) => handleNestedCheckboxChange('enablePaymentGateways', 'cod', e.target.checked)}
-                      className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-                    />
-                    <label htmlFor="cod" className="ml-2 block text-sm text-gray-700">
-                      Cash on Delivery
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+        {activeTab === 'social' && (
+          <SocialMediaSettings
+            socialMedia={settings.socialMedia}
+            onSave={handleSocialMediaSave}
+            isSaving={isSaving}
+          />
+        )}
 
-          <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-800">Notification Settings</h2>
-            </div>
-            <div className="p-6 space-y-4">
-              <p className="text-sm text-gray-700">
-                Enable email notifications for the following events:
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="orderConfirmation"
-                    checked={settings.enableNotifications.orderConfirmation}
-                    onChange={(e) => handleNestedCheckboxChange('enableNotifications', 'orderConfirmation', e.target.checked)}
-                    className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-                  />
-                  <label htmlFor="orderConfirmation" className="ml-2 block text-sm text-gray-700">
-                    Order Confirmation
-                  </label>
-                </div>
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="orderShipped"
-                    checked={settings.enableNotifications.orderShipped}
-                    onChange={(e) => handleNestedCheckboxChange('enableNotifications', 'orderShipped', e.target.checked)}
-                    className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-                  />
-                  <label htmlFor="orderShipped" className="ml-2 block text-sm text-gray-700">
-                    Order Shipped
-                  </label>
-                </div>
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="orderDelivered"
-                    checked={settings.enableNotifications.orderDelivered}
-                    onChange={(e) => handleNestedCheckboxChange('enableNotifications', 'orderDelivered', e.target.checked)}
-                    className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-                  />
-                  <label htmlFor="orderDelivered" className="ml-2 block text-sm text-gray-700">
-                    Order Delivered
-                  </label>
-                </div>
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="lowStock"
-                    checked={settings.enableNotifications.lowStock}
-                    onChange={(e) => handleNestedCheckboxChange('enableNotifications', 'lowStock', e.target.checked)}
-                    className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-                  />
-                  <label htmlFor="lowStock" className="ml-2 block text-sm text-gray-700">
-                    Low Stock Alerts
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-800">Social Media</h2>
-            </div>
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="facebook" className="block text-sm font-medium text-gray-700 mb-1">
-                  Facebook URL
-                </label>
-                <input
-                  type="url"
-                  id="facebook"
-                  value={settings.socialMedia.facebook}
-                  onChange={(e) => handleNestedInputChange('socialMedia', 'facebook', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div>
-                <label htmlFor="instagram" className="block text-sm font-medium text-gray-700 mb-1">
-                  Instagram URL
-                </label>
-                <input
-                  type="url"
-                  id="instagram"
-                  value={settings.socialMedia.instagram}
-                  onChange={(e) => handleNestedInputChange('socialMedia', 'instagram', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div>
-                <label htmlFor="twitter" className="block text-sm font-medium text-gray-700 mb-1">
-                  Twitter URL
-                </label>
-                <input
-                  type="url"
-                  id="twitter"
-                  value={settings.socialMedia.twitter}
-                  onChange={(e) => handleNestedInputChange('socialMedia', 'twitter', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div>
-                <label htmlFor="youtube" className="block text-sm font-medium text-gray-700 mb-1">
-                  YouTube URL
-                </label>
-                <input
-                  type="url"
-                  id="youtube"
-                  value={settings.socialMedia.youtube}
-                  onChange={(e) => handleNestedInputChange('socialMedia', 'youtube', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-end">
-            <button
-              type="button"
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 mr-4"
-              onClick={() => router.push('/admin')}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition-colors flex items-center"
-              disabled={isSaving}
-            >
-              {isSaving ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Saving...
-                </>
-              ) : (
-                'Save Settings'
-              )}
-            </button>
-          </div>
-        </form>
-      )}
-    </>
+        {activeTab === 'delivery' && (
+          <DeliveryAgenciesSettings
+            deliveryAgencies={deliveryAgencies}
+            onSave={handleDeliveryAgencySave}
+            onDelete={handleDeliveryAgencyDelete}
+            isLoading={isLoading}
+          />
+        )}
+      </div>
+    </div>
   );
 }

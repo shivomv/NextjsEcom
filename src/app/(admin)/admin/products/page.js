@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import FilterDropdown from '@/components/common/FilterDropdown';
 import { useAuth } from '@/context/AuthContext';
 
 export default function ProductsManagement() {
@@ -110,8 +111,7 @@ export default function ProductsManagement() {
   };
 
   // Handle filter change
-  const handleFilterChange = (e) => {
-    const newFilter = e.target.value;
+  const handleFilterChange = (newFilter) => {
     setFilter(newFilter);
     setCurrentPage(1);
 
@@ -196,14 +196,14 @@ export default function ProductsManagement() {
       )}
 
       {/* Search and filter */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <form onSubmit={handleSearch} className="flex-1">
-            <div className="relative">
+      <div className="rounded-lg  p-2">
+        <div className="flex items-center justify-between gap-2">
+          <form onSubmit={handleSearch} className="flex-1 flex items-center gap-2">
+            <div className="relative flex-1">
               <input
                 type="text"
                 placeholder="Search products..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-fullm py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -216,20 +216,19 @@ export default function ProductsManagement() {
                 </svg>
               </button>
             </div>
-          </form>
-          <div className="w-full md:w-64">
-            <select
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-              value={filter}
+            <FilterDropdown
+              options={[
+                { value: 'all', label: 'All Products' },
+                { value: 'active', label: 'Active Products' },
+                { value: 'inactive', label: 'Inactive Products' },
+                { value: 'lowStock', label: 'Low Stock' },
+                { value: 'outOfStock', label: 'Out of Stock' }
+              ]}
+              selectedValue={filter}
               onChange={handleFilterChange}
-            >
-              <option value="all">All Products</option>
-              <option value="active">Active Products</option>
-              <option value="inactive">Inactive Products</option>
-              <option value="lowStock">Low Stock</option>
-              <option value="outOfStock">Out of Stock</option>
-            </select>
-          </div>
+              label="Filter"
+            />
+          </form>
         </div>
       </div>
 

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import AdvancedFilterDropdown from '@/components/common/AdvancedFilterDropdown';
 import { useAuth } from '@/context/AuthContext';
 
 export default function OrdersManagement() {
@@ -97,29 +98,30 @@ export default function OrdersManagement() {
   }, [isAuthenticated, user, currentPage, filter, startDate, endDate]);
 
   // Handle filter change
-  const handleFilterChange = (e) => {
-    const newFilter = e.target.value;
-    setFilter(newFilter);
+  const handleFilterChange = (filterValues) => {
+    // Update filter state
+    if (filterValues.status !== undefined) {
+      setFilter(filterValues.status);
+    }
+
+    if (filterValues.dateRange !== undefined) {
+      setStartDate(filterValues.dateRange.startDate || '');
+      setEndDate(filterValues.dateRange.endDate || '');
+    }
+
     setCurrentPage(1);
 
-    // Update URL with filter parameter
+    // Update URL with filter parameters
     const params = new URLSearchParams();
-    if (newFilter !== 'all') params.append('status', newFilter);
-    if (startDate) params.append('startDate', startDate);
-    if (endDate) params.append('endDate', endDate);
-
-    router.push(`/admin/orders?${params.toString()}`);
-  };
-
-  // Handle date filter
-  const handleDateFilter = (e) => {
-    e.preventDefault();
-
-    // Update URL with date parameters
-    const params = new URLSearchParams();
-    if (filter !== 'all') params.append('status', filter);
-    if (startDate) params.append('startDate', startDate);
-    if (endDate) params.append('endDate', endDate);
+    if (filterValues.status && filterValues.status !== 'all') {
+      params.append('status', filterValues.status);
+    }
+    if (filterValues.dateRange?.startDate) {
+      params.append('startDate', filterValues.dateRange.startDate);
+    }
+    if (filterValues.dateRange?.endDate) {
+      params.append('endDate', filterValues.dateRange.endDate);
+    }
 
     router.push(`/admin/orders?${params.toString()}`);
   };
@@ -185,59 +187,40 @@ export default function OrdersManagement() {
       )}
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-          <div className="w-full md:w-48">
-            <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700 mb-1">
-              Filter by Status
-            </label>
-            <select
-              id="status-filter"
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-              value={filter}
-              onChange={handleFilterChange}
-            >
-              <option value="all">All Orders</option>
-              <option value="Pending">Pending</option>
-              <option value="Processing">Processing</option>
-              <option value="Shipped">Shipped</option>
-              <option value="Delivered">Delivered</option>
-              <option value="Cancelled">Cancelled</option>
-            </select>
-          </div>
-
-          <form onSubmit={handleDateFilter} className="flex flex-col md:flex-row gap-4 items-end">
-            <div>
-              <label htmlFor="start-date" className="block text-sm font-medium text-gray-700 mb-1">
-                Start Date
-              </label>
-              <input
-                type="date"
-                id="start-date"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="end-date" className="block text-sm font-medium text-gray-700 mb-1">
-                End Date
-              </label>
-              <input
-                type="date"
-                id="end-date"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
-            </div>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition-colors"
-            >
-              Apply Date Filter
-            </button>
-          </form>
+      <div className=" p-2">
+        <div className="flex justify-end">
+          <AdvancedFilterDropdown
+            filters={[
+              {
+                id: 'status',
+                label: 'Order Status',
+                type: 'select',
+                options: [
+                  { value: 'all', label: 'All Orders' },
+                  { value: 'Pending', label: 'Pending' },
+                  { value: 'Processing', label: 'Processing' },
+                  { value: 'Shipped', label: 'Shipped' },
+                  { value: 'Delivered', label: 'Delivered' },
+                  { value: 'Cancelled', label: 'Cancelled' }
+                ]
+              },
+              {
+                id: 'dateRange',
+                label: 'Date Range',
+                type: 'range',
+                minPlaceholder: 'Start Date',
+                maxPlaceholder: 'End Date'
+              }
+            ]}
+            initialValues={{
+              status: filter,
+              dateRange: {
+                startDate: startDate,
+                endDate: endDate
+              }
+            }}
+            onApply={handleFilterChange}
+          />
         </div>
       </div>
 

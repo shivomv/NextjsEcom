@@ -4,12 +4,15 @@ import { useState, useEffect } from 'react';
 import Link from "next/link";
 import ImageWithFallback from "@/components/common/ImageWithFallback";
 import { useCategories } from '@/context/CategoryContext';
+import { useCart } from '@/context/CartContext';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 export default function Home() {
   const { parentCategories, loading: categoriesLoading } = useCategories();
+  const { addToCart } = useCart();
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [addingToCartId, setAddingToCartId] = useState(null);
 
   // Fetch featured products
   useEffect(() => {
@@ -104,6 +107,17 @@ export default function Home() {
 
   // Use real data or fallback to mock data
   const displayProducts = featuredProducts.length > 0 ? featuredProducts : mockProducts;
+
+  // Handle add to cart
+  const handleAddToCart = (product) => {
+    setAddingToCartId(product._id || product.id);
+    addToCart(product, 1);
+
+    // Reset button state after animation
+    setTimeout(() => {
+      setAddingToCartId(null);
+    }, 1000);
+  };
 
   return (
     <div className="min-h-screen pb-24 md:pb-0">
@@ -227,10 +241,20 @@ export default function Home() {
                       )}
                     </div>
 
-                    <button className="bg-gradient-purple-pink hover:opacity-90 text-white p-2 rounded-full shadow-md transition-all transform hover:scale-110">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                      </svg>
+                    <button
+                      onClick={() => handleAddToCart(product)}
+                      disabled={addingToCartId === (product._id || product.id)}
+                      className="bg-gradient-purple-pink hover:opacity-90 text-white p-2 rounded-full shadow-md transition-all transform hover:scale-110"
+                      aria-label="Add to Cart"
+                      title="Add to Cart"
+                    >
+                      {addingToCartId === (product._id || product.id) ? (
+                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                      )}
                     </button>
                   </div>
                 </div>

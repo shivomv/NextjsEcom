@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import FilterDropdown from '@/components/common/FilterDropdown';
 import { useAuth } from '@/context/AuthContext';
 
 export default function UsersManagement() {
@@ -105,8 +106,7 @@ export default function UsersManagement() {
   };
 
   // Handle filter change
-  const handleFilterChange = (e) => {
-    const newFilter = e.target.value;
+  const handleFilterChange = (newFilter) => {
     setFilter(newFilter);
     setCurrentPage(1);
 
@@ -160,10 +160,10 @@ export default function UsersManagement() {
       )}
 
       {/* Search and filter */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <form onSubmit={handleSearch} className="flex-1">
-            <div className="relative">
+      <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+        <div className="flex items-center justify-between gap-2">
+          <form onSubmit={handleSearch} className="flex-1 flex items-center gap-2">
+            <div className="relative flex-1">
               <input
                 type="text"
                 placeholder="Search users by name or email..."
@@ -180,18 +180,17 @@ export default function UsersManagement() {
                 </svg>
               </button>
             </div>
-          </form>
-          <div className="w-full md:w-48">
-            <select
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-              value={filter}
+            <FilterDropdown
+              options={[
+                { value: 'all', label: 'All Users' },
+                { value: 'admin', label: 'Admins' },
+                { value: 'customer', label: 'Customers' }
+              ]}
+              selectedValue={filter}
               onChange={handleFilterChange}
-            >
-              <option value="all">All Users</option>
-              <option value="admin">Admins</option>
-              <option value="customer">Customers</option>
-            </select>
-          </div>
+              label="Filter"
+            />
+          </form>
         </div>
       </div>
 

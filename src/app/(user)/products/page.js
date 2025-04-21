@@ -152,14 +152,16 @@ export default function ProductsPage() {
               categories={categories}
               selectedCategory={selectedCategory}
               priceRange={priceRange}
+              sortOption={sortOption}
               onCategoryChange={handleCategoryChange}
               onPriceRangeChange={handlePriceRangeChange}
+              onSortChange={handleSortChange}
             />
           </div>
 
           {/* Product Listing */}
           <div className="w-full md:w-3/4">
-            <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+            <div className="hidden md:flex mb-6 flex-col sm:flex-row justify-between items-start sm:items-center">
               <h1 className="text-2xl font-bold mb-2 sm:mb-0">
                 {selectedCategory && categories.length > 0
                   ? categories.find(cat => cat.slug === selectedCategory)?.name || 'All Products'
@@ -173,16 +175,25 @@ export default function ProductsPage() {
 
               <div className="flex items-center">
                 <span className="text-sm text-text-light mr-2">Sort by:</span>
-                <select
-                  value={sortOption}
-                  onChange={(e) => handleSortChange(e.target.value)}
-                  className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="newest">Newest</option>
-                  <option value="price-asc">Price: Low to High</option>
-                  <option value="price-desc">Price: High to Low</option>
-                  <option value="rating">Top Rated</option>
-                </select>
+                <div className="relative">
+                  <select
+                    value={sortOption}
+                    onChange={(e) => handleSortChange(e.target.value)}
+                    className="border border-gray-300 rounded-md pl-2 pr-8 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary appearance-none"
+                  >
+                    <option value="newest">Newest</option>
+                    <option value="price-asc">Price: Low to High</option>
+                    <option value="price-desc">Price: High to Low</option>
+                    <option value="rating">Top Rated</option>
+                  </select>
+                  <svg
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                  </svg>
+                </div>
               </div>
             </div>
 
@@ -225,3 +236,5 @@ export default function ProductsPage() {
     </div>
   );
 }
+
+
