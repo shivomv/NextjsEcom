@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/utils/db';
 import Order from '@/models/orderModel';
+import Product from '@/models/productModel';
 import { authMiddleware } from '@/utils/auth';
+import mongoose from 'mongoose';
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -51,21 +53,64 @@ export async function POST(request) {
       data.paymentMethod = data.paymentMethod.paymentMethod || 'COD';
     }
 
-    // Create order
-    const order = await Order.create({
-      user: user._id,
-      orderItems: data.orderItems,
-      shippingAddress: data.shippingAddress,
-      paymentMethod: data.paymentMethod,
-      itemsPrice: data.itemsPrice,
-      taxPrice: data.taxPrice,
-      shippingPrice: data.shippingPrice,
-      totalPrice: data.totalPrice,
-      notes: data.notes,
-    });
+    // Start a MongoDB session for transaction
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    return NextResponse.json(order, { status: 201 });
+    try {
+      // Check stock availability for all items
+      for (const item of data.orderItems) {
+        const product = await Product.findById(item.product).session(session);
+
+        if (!product) {
+          throw new Error(`Product not found: ${item.product}`);
+        }
+
+        if (product.stock < item.qty) {
+          throw new Error(`Insufficient stock for ${product.name}. Available: ${product.stock}, Requested: ${item.qty}`);
+        }
+      }
+
+      // Create order
+      const order = await Order.create([{
+        user: user._id,
+        orderItems: data.orderItems,
+        shippingAddress: data.shippingAddress,
+        paymentMethod: data.paymentMethod,
+        itemsPrice: data.itemsPrice,
+        taxPrice: data.taxPrice,
+        shippingPrice: data.shippingPrice,
+        totalPrice: data.totalPrice,
+        notes: data.notes,
+      }], { session });
+
+      // Reduce stock for each product
+      for (const item of data.orderItems) {
+        await Product.findByIdAndUpdate(
+          item.product,
+          { $inc: { stock: -item.qty } },
+          { session }
+        );
+      }
+
+      // Commit the transaction
+      await session.commitTransaction();
+      session.endSession();
+
+      return NextResponse.json(order[0], { status: 201 });
+    } catch (error) {
+      // Abort transaction on error
+      await session.abortTransaction();
+      session.endSession();
+
+      console.error('Transaction failed:', error);
+      return NextResponse.json(
+        { message: error.message || 'Failed to process order' },
+        { status: 400 }
+      );
+    }
   } catch (error) {
+    // This catch block handles errors outside the transaction
     console.error('Error creating order:', error);
     console.error('Error details:', {
       name: error.name,
@@ -73,12 +118,16 @@ export async function POST(request) {
       stack: error.stack,
       cause: error.cause,
     });
+
+    // Check if it's a validation error (400) or server error (500)
+    const statusCode = error.name === 'ValidationError' ? 400 : 500;
+
     return NextResponse.json(
       {
         message: error.message || 'Server error',
         details: 'An unexpected error occurred while processing your order. Please try again later.'
       },
-      { status: 500 }
+      { status: statusCode }
     );
   }
 }
