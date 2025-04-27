@@ -58,7 +58,7 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting, isEdi
 
     // Handle different input types
     const newValue = type === 'checkbox' ? checked :
-                    (name === 'price' || name === 'mrp' || name === 'countInStock') ?
+                    (name === 'price' || name === 'mrp' || name === 'stock') ?
                     (value === '' ? '' : Number(value)) : value;
 
     setFormData({
@@ -202,8 +202,8 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting, isEdi
     if (formData.price <= 0) newErrors.price = 'Price must be greater than 0';
     if (formData.mrp && formData.mrp < formData.price) newErrors.mrp = 'MRP cannot be less than price';
     if (!formData.category) newErrors.category = 'Category is required';
-    if (!formData.countInStock && formData.countInStock !== 0) newErrors.countInStock = 'Stock quantity is required';
-    if (formData.countInStock < 0) newErrors.countInStock = 'Stock quantity cannot be negative';
+    if (!formData.stock && formData.stock !== 0) newErrors.stock = 'Stock quantity is required';
+    if (formData.stock < 0) newErrors.stock = 'Stock quantity cannot be negative';
     if (!formData.image) newErrors.image = 'Product image is required';
 
     setErrors(newErrors);
@@ -343,21 +343,21 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting, isEdi
 
             {/* Stock */}
             <div>
-              <label htmlFor="countInStock" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="stock" className="block text-sm font-medium text-gray-700">
                 Stock Quantity*
               </label>
               <input
                 type="number"
-                id="countInStock"
-                name="countInStock"
+                id="stock"
+                name="stock"
                 min="0"
-                value={formData.countInStock}
+                value={formData.stock}
                 onChange={handleChange}
                 className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary ${
-                  errors.countInStock ? 'border-red-500' : ''
+                  errors.stock ? 'border-red-500' : ''
                 }`}
               />
-              {errors.countInStock && <p className="mt-1 text-sm text-red-600">{errors.countInStock}</p>}
+              {errors.stock && <p className="mt-1 text-sm text-red-600">{errors.stock}</p>}
             </div>
           </div>
 

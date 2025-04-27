@@ -98,9 +98,9 @@ const productSchema = new mongoose.Schema(
       required: [true, 'Please add an MRP'],
       default: 0,
     },
-    countInStock: {
+    stock: {
       type: Number,
-      required: [true, 'Please add count in stock'],
+      required: [true, 'Please add stock quantity'],
       default: 0,
     },
     isFeatured: {
