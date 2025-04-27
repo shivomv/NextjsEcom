@@ -25,6 +25,7 @@ export default function AdminDashboardPage() {
     },
     recentOrders: [],
     lowStockProducts: [],
+    outOfStockProducts: [],
     salesData: [],
     period: 'week'
   });
@@ -79,17 +80,30 @@ export default function AdminDashboardPage() {
         const ordersData = await ordersResponse.json();
 
         // Fetch low stock products
-        const productsResponse = await fetch('/api/admin/products/low-stock?limit=3&threshold=10', {
+        const lowStockResponse = await fetch('/api/admin/products/low-stock?limit=3&threshold=10', {
           headers: {
             'Authorization': `Bearer ${user.token}`
           }
         });
 
-        if (!productsResponse.ok) {
+        if (!lowStockResponse.ok) {
           throw new Error('Failed to fetch low stock products');
         }
 
-        const productsData = await productsResponse.json();
+        const lowStockData = await lowStockResponse.json();
+
+        // Fetch out of stock products
+        const outOfStockResponse = await fetch('/api/admin/products/out-of-stock?limit=3', {
+          headers: {
+            'Authorization': `Bearer ${user.token}`
+          }
+        });
+
+        if (!outOfStockResponse.ok) {
+          throw new Error('Failed to fetch out of stock products');
+        }
+
+        const outOfStockData = await outOfStockResponse.json();
 
         // Fetch revenue data for chart
         const revenueResponse = await fetch('/api/admin/orders/revenue?period=week', {
@@ -115,12 +129,20 @@ export default function AdminDashboardPage() {
         }));
 
         // Format low stock products data
-        const formattedProducts = productsData.products.map(product => ({
+        const formattedLowStockProducts = lowStockData.products.map(product => ({
           id: product._id,
           name: product.name,
-          stock: product.countInStock,
+          stock: product.stock,
           threshold: 10, // Default threshold
-          image: product.image || '/images/placeholder.jpg'
+          image: Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : '/images/placeholder.jpg'
+        }));
+
+        // Format out of stock products data
+        const formattedOutOfStockProducts = outOfStockData.products.map(product => ({
+          id: product._id,
+          name: product.name,
+          stock: 0,
+          image: Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : '/images/placeholder.jpg'
         }));
 
         // Set all the data
@@ -137,7 +159,8 @@ export default function AdminDashboardPage() {
             products: 0
           },
           recentOrders: formattedOrders,
-          lowStockProducts: formattedProducts,
+          lowStockProducts: formattedLowStockProducts,
+          outOfStockProducts: formattedOutOfStockProducts,
           salesData: revenueData.dailyRevenue || [],
           period: revenueData.period || 'week'
         });
@@ -439,7 +462,7 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Recent Orders */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <div className="p-6 border-b border-gray-200">
@@ -498,21 +521,77 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-
-        {/* Low Stock Products */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="p-6 border-b border-gray-200">
+        {/* Out of Stock Products - URGENT */}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden border-2 border-red-500">
+          <div className="p-6 border-b border-gray-200 bg-red-50">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Low Stock Products</h3>
-              <Link href="/admin/products" className="text-primary text-sm font-medium hover:underline">
-                View All Products
+              <div className="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <h3 className="text-lg font-semibold text-red-900">Out of Stock Products</h3>
+              </div>
+              <Link href="/admin/products?filter=out-of-stock" className="text-red-600 text-sm font-medium hover:underline">
+                View All
               </Link>
             </div>
           </div>
           <div className="p-6">
-            <div className="space-y-4">
+            {stats.outOfStockProducts.length > 0 ? (
+              <div className="space-y-4">
+                {stats.outOfStockProducts.map((product) => (
+                  <div key={product.id} className="flex items-center space-x-4">
+                    <div className="flex-shrink-0 h-12 w-12 rounded-md overflow-hidden bg-gray-100">
+                      <Image src={product.image} alt={product.name} width={48} height={48} className="h-full w-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {product.name}
+                      </p>
+                      <p className="text-sm text-red-600 font-bold">
+                        OUT OF STOCK
+                      </p>
+                    </div>
+                    <div>
+                      <Link
+                        href={`/admin/products/edit/${product.id}`}
+                        className="inline-flex items-center px-3 py-1 border border-red-500 text-red-500 text-sm font-medium rounded-md hover:bg-red-50"
+                      >
+                        Restock Now
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-4 text-gray-500">
+                No out of stock products
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Low Stock Products */}
+      <div className="bg-white rounded-lg shadow-md overflow-hidden mb-8">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-yellow-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <h3 className="text-lg font-semibold text-gray-900">Low Stock Products</h3>
+            </div>
+            <Link href="/admin/products?filter=low-stock" className="text-primary text-sm font-medium hover:underline">
+              View All Products
+            </Link>
+          </div>
+        </div>
+        <div className="p-6">
+          {stats.lowStockProducts.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {stats.lowStockProducts.map((product) => (
-                <div key={product.id} className="flex items-center space-x-4">
+                <div key={product.id} className="flex items-center space-x-4 p-4 border border-yellow-200 rounded-lg bg-yellow-50">
                   <div className="flex-shrink-0 h-12 w-12 rounded-md overflow-hidden bg-gray-100">
                     <Image src={product.image} alt={product.name} width={48} height={48} className="h-full w-full object-cover" />
                   </div>
@@ -520,14 +599,14 @@ export default function AdminDashboardPage() {
                     <p className="text-sm font-medium text-gray-900 truncate">
                       {product.name}
                     </p>
-                    <p className="text-sm text-red-600">
+                    <p className="text-sm text-yellow-600">
                       Only {product.stock} left in stock
                     </p>
                   </div>
                   <div>
                     <Link
                       href={`/admin/products/edit/${product.id}`}
-                      className="inline-flex items-center px-3 py-1 border border-primary text-primary text-sm font-medium rounded-md hover:bg-primary/5"
+                      className="inline-flex items-center px-3 py-1 border border-yellow-500 text-yellow-700 text-sm font-medium rounded-md hover:bg-yellow-100"
                     >
                       Restock
                     </Link>
@@ -535,7 +614,11 @@ export default function AdminDashboardPage() {
                 </div>
               ))}
             </div>
-          </div>
+          ) : (
+            <div className="text-center py-4 text-gray-500">
+              No low stock products
+            </div>
+          )}
         </div>
       </div>
     </div>
