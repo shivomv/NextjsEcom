@@ -88,7 +88,7 @@ const orderSchema = new mongoose.Schema(
       {
         status: {
           type: String,
-          enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Payment Received'],
+          enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Payment Received', 'Stock Restored'],
           required: true
         },
         timestamp: {
@@ -144,6 +144,10 @@ const orderSchema = new mongoose.Schema(
     },
     notes: {
       type: String,
+    },
+    stockRestored: {
+      type: Boolean,
+      default: false,
     },
   },
   {

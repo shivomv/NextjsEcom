@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/utils/db';
 import Order from '@/models/orderModel';
+import Product from '@/models/productModel';
 import { authMiddleware, adminMiddleware } from '@/utils/auth';
+import mongoose from 'mongoose';
 
 // @desc    Get order by ID
 // @route   GET /api/orders/:id
@@ -155,6 +157,49 @@ export async function PUT(request, context) {
                 order.statusTimeline[status].timestamp = null;
               }
             });
+
+            // Restore stock for cancelled orders if they haven't been delivered
+            if (!order.isDelivered && !order.stockRestored) {
+              // Start a MongoDB session for transaction
+              const session = await mongoose.startSession();
+              session.startTransaction();
+
+              try {
+                // Restore stock for each product in the order
+                for (const item of order.orderItems) {
+                  await Product.findByIdAndUpdate(
+                    item.product,
+                    { $inc: { stock: item.qty } },
+                    { session }
+                  );
+
+                  // Log stock restoration for monitoring
+                  console.log(`Stock restored for product ${item.name}: +${item.qty} units`);
+                }
+
+                // Mark order as having its stock restored to prevent double restoration
+                order.stockRestored = true;
+
+                // Commit the transaction
+                await session.commitTransaction();
+                session.endSession();
+
+                // Add a note to the status history about stock restoration
+                order.statusHistory.push({
+                  status: 'Stock Restored',
+                  timestamp: new Date(),
+                  note: 'Product stock quantities restored due to order cancellation'
+                });
+              } catch (error) {
+                // Abort transaction on error
+                await session.abortTransaction();
+                session.endSession();
+
+                console.error('Error restoring stock:', error);
+                // We don't throw here to allow the order status update to proceed
+                // but we log the error for monitoring
+              }
+            }
           } else {
             // For normal flow, mark previous statuses as completed
             const statusOrder = ['Pending', 'Processing', 'Shipped', 'Delivered'];

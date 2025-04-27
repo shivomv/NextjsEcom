@@ -86,11 +86,26 @@ export async function POST(request) {
 
       // Reduce stock for each product
       for (const item of data.orderItems) {
+        const product = await Product.findById(item.product).session(session);
+
+        // Double-check stock availability (in case it changed during transaction)
+        if (product.stock < item.qty) {
+          throw new Error(`Insufficient stock for ${product.name}. Available: ${product.stock}, Requested: ${item.qty}`);
+        }
+
+        // Update stock with validation to prevent negative values
         await Product.findByIdAndUpdate(
           item.product,
-          { $inc: { stock: -item.qty } },
+          {
+            $set: {
+              stock: Math.max(0, product.stock - item.qty)
+            }
+          },
           { session }
         );
+
+        // Log stock reduction for monitoring
+        console.log(`Stock reduced for product ${product.name}: ${product.stock} -> ${product.stock - item.qty}`);
       }
 
       // Commit the transaction
