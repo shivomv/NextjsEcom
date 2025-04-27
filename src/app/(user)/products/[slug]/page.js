@@ -247,11 +247,25 @@ export default function ProductDetailPage() {
 
               {/* Stock Status */}
               <div className="mb-4">
-                <span className={`text-sm ${product.stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {product.stock > 0
-                    ? `In Stock (${product.stock} available)`
-                    : 'Out of Stock'}
-                </span>
+                {product.stock > 0 ? (
+                  <span className="text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full border border-green-200">
+                    In Stock ({product.stock} available)
+                  </span>
+                ) : (
+                  <span className="text-sm text-white bg-red-600 px-3 py-1 rounded-full font-bold">
+                    OUT OF STOCK
+                  </span>
+                )}
+
+                {/* Low stock warning */}
+                {product.stock > 0 && product.stock <= 5 && (
+                  <p className="text-sm text-amber-600 mt-2 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    Only {product.stock} left in stock - order soon!
+                  </p>
+                )}
               </div>
 
               {/* Category */}
@@ -313,35 +327,43 @@ export default function ProductDetailPage() {
 
               {/* Add to Cart Button */}
               <div className="flex flex-col sm:flex-row gap-3 mb-6">
-                <button
-                  onClick={handleAddToCart}
-                  disabled={product.stock <= 0 || isAddingToCart}
-                  className={`${
-                    product.stock <= 0
-                      ? 'bg-gray-300 cursor-not-allowed'
-                      : isAddingToCart
+                {product.stock <= 0 ? (
+                  <button
+                    disabled
+                    className="bg-red-100 border-2 border-red-600 text-red-600 px-6 py-3 rounded-md flex-1 flex items-center justify-center cursor-not-allowed"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    OUT OF STOCK
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleAddToCart}
+                    disabled={isAddingToCart}
+                    className={`${
+                      isAddingToCart
                         ? 'bg-green-500'
                         : 'bg-primary hover:bg-primary-dark'
-                  } text-white px-6 py-3 rounded-md transition-colors flex-1 flex items-center justify-center`}
-                >
-                  {product.stock <= 0 ? (
-                    'Out of Stock'
-                  ) : isAddingToCart ? (
-                    <>
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                      </svg>
-                      Added to Cart
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                      </svg>
-                      Add to Cart
-                    </>
-                  )}
-                </button>
+                    } text-white px-6 py-3 rounded-md transition-colors flex-1 flex items-center justify-center`}
+                  >
+                    {isAddingToCart ? (
+                      <>
+                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Added to Cart
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                        Add to Cart
+                      </>
+                    )}
+                  </button>
+                )}
 
                 <button
                   className="hidden sm:block border border-primary text-primary px-4 py-3 rounded-md hover:bg-primary hover:text-white transition-colors"

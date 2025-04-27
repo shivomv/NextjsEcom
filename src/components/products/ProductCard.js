@@ -34,13 +34,23 @@ export default function ProductCard({ product }) {
             alt={product.name}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className="object-cover"
+            className={`object-cover ${product.stock <= 0 ? 'opacity-70' : ''}`}
             loading="eager"
             priority={true}
           />
+
+          {/* Out of stock overlay */}
+          {product.stock <= 0 && (
+            <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
+              <div className="bg-red-600 text-white px-4 py-2 rounded-md font-bold transform rotate-45 shadow-lg">
+                OUT OF STOCK
+              </div>
+            </div>
+          )}
         </div>
 
-        {product.comparePrice > 0 && product.comparePrice > product.price && (
+        {/* Discount badge - only show if product is in stock */}
+        {product.stock > 0 && product.comparePrice > 0 && product.comparePrice > product.price && (
           <div className="absolute top-2 left-2 bg-gradient-pink-orange text-white text-xs px-3 py-1.5 rounded-full font-medium shadow-md border border-white">
             {Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)}% OFF
           </div>
