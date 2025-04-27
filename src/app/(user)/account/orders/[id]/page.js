@@ -200,14 +200,22 @@ export default function OrderDetailPage({ params }) {
 
   // Handle order cancellation
   const handleCancelOrder = async () => {
+    console.log('Cancel button clicked');
+
     if (!confirm('Are you sure you want to cancel this order? This action cannot be undone.')) {
+      console.log('Cancellation cancelled by user');
       return;
     }
 
+    console.log('Starting cancellation process');
     setIsCancelling(true);
     setCancelSuccess(false);
 
     try {
+      console.log('Sending cancellation request to API');
+      console.log('Order ID:', id);
+      console.log('User token:', user.token ? 'Token exists' : 'No token');
+
       const response = await fetch(`/api/orders/${id}`, {
         method: 'PUT',
         headers: {
@@ -220,13 +228,16 @@ export default function OrderDetailPage({ params }) {
         })
       });
 
+      console.log('API response status:', response.status);
       const data = await response.json();
+      console.log('API response data:', data);
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to cancel order');
       }
 
       // Update the order in state
+      console.log('Updating order in state');
       setOrder(data);
       setCancelSuccess(true);
 
@@ -237,6 +248,7 @@ export default function OrderDetailPage({ params }) {
       alert(`Failed to cancel order: ${error.message}`);
     } finally {
       setIsCancelling(false);
+      console.log('Cancellation process completed');
     }
   };
 
@@ -675,7 +687,7 @@ export default function OrderDetailPage({ params }) {
                     Write a Review
                   </button>
                 )}
-                {(order.status === 'Pending' || order.status === 'Processing') && (
+                {(order.status === 'Pending' || order.status === 'pending' || order.status === 'Processing' || order.status === 'processing') && (
                   <button
                     onClick={handleCancelOrder}
                     disabled={isCancelling}
@@ -704,6 +716,18 @@ export default function OrderDetailPage({ params }) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
                   Contact Support
+                </button>
+
+                {/* Debug button - remove in production */}
+                <button
+                  onClick={() => {
+                    console.log('Current order status:', order.status);
+                    console.log('Order data:', order);
+                    alert(`Current order status: ${order.status}`);
+                  }}
+                  className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors flex items-center justify-center"
+                >
+                  Debug: Check Status
                 </button>
               </div>
             </div>
