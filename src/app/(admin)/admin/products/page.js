@@ -298,8 +298,8 @@ export default function ProductsManagement() {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className={`text-sm ${product.countInStock === 0 ? 'text-red-600' : product.countInStock < 10 ? 'text-yellow-600' : 'text-gray-900'}`}>
-                        {product.countInStock} in stock
+                      <div className={`text-sm ${product.stock === 0 ? 'text-red-600' : product.stock < 10 ? 'text-yellow-600' : 'text-gray-900'}`}>
+                        {product.stock} in stock
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
