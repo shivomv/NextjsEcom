@@ -15,6 +15,8 @@ export default function OrderDetailPage({ params }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isClient, setIsClient] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelSuccess, setCancelSuccess] = useState(false);
 
   // Set isClient to true when component mounts
   useEffect(() => {
@@ -196,6 +198,48 @@ export default function OrderDetailPage({ params }) {
     }
   };
 
+  // Handle order cancellation
+  const handleCancelOrder = async () => {
+    if (!confirm('Are you sure you want to cancel this order? This action cannot be undone.')) {
+      return;
+    }
+
+    setIsCancelling(true);
+    setCancelSuccess(false);
+
+    try {
+      const response = await fetch(`/api/orders/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.token}`
+        },
+        body: JSON.stringify({
+          status: 'Cancelled',
+          notes: 'Cancelled by customer'
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to cancel order');
+      }
+
+      // Update the order in state
+      setOrder(data);
+      setCancelSuccess(true);
+
+      // Show success message
+      alert('Order cancelled successfully');
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+      alert(`Failed to cancel order: ${error.message}`);
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
   // Show loading state while checking authentication or loading order
   if (authLoading || !isClient || isLoading) {
     return (
@@ -312,6 +356,18 @@ export default function OrderDetailPage({ params }) {
             {/* Order status */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-lg font-semibold text-gray-800 mb-4">Order Status</h2>
+
+              {/* Success message */}
+              {cancelSuccess && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md text-green-700">
+                  <div className="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <p>Your order has been successfully cancelled. Any payment will be refunded according to our refund policy.</p>
+                  </div>
+                </div>
+              )}
               {/* Order Status Timeline */}
               <div className="mb-6">
                 <div className="relative">
@@ -619,12 +675,28 @@ export default function OrderDetailPage({ params }) {
                     Write a Review
                   </button>
                 )}
-                {order.status === 'pending' && (
-                  <button className="w-full px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                    Cancel Order
+                {(order.status === 'Pending' || order.status === 'Processing') && (
+                  <button
+                    onClick={handleCancelOrder}
+                    disabled={isCancelling}
+                    className="w-full px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isCancelling ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Cancelling...
+                      </>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        Cancel Order
+                      </>
+                    )}
                   </button>
                 )}
                 <button className="w-full px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors flex items-center justify-center">
