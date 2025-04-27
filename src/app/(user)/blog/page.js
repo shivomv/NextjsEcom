@@ -1,89 +1,24 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ImageWithFallback from '@/components/common/ImageWithFallback';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 export default function BlogPage() {
-  // Mock blog posts data
-  const featuredPost = {
-    id: 1,
-    title: 'The Significance of Navratri: A 9-Day Spiritual Journey',
-    excerpt: 'Explore the deep spiritual meaning behind the 9-day celebration of Navratri, the worship of Goddess Durga, and how each day represents a different aspect of divine feminine energy.',
-    image: '/images/blog/navratri.jpg',
-    category: 'Festivals',
-    date: 'October 15, 2023',
-    author: 'Ramesh Sharma',
-    authorImage: '/images/team/founder.jpg',
-    slug: 'significance-of-navratri',
-  };
+  const [loading, setLoading] = useState(true);
 
-  const blogPosts = [
-    {
-      id: 2,
-      title: 'Understanding the Five Elements (Panch Tattva) in Hindu Philosophy',
-      excerpt: 'Dive into the concept of Panch Tattva (five elements) and how they form the building blocks of all creation according to ancient Hindu philosophy.',
-      image: '/images/blog/panch-tattva.jpg',
-      category: 'Spirituality',
-      date: 'September 28, 2023',
-      author: 'Priya Patel',
-      authorImage: '/images/team/artisan-head.jpg',
-      slug: 'understanding-panch-tattva',
-    },
-    {
-      id: 3,
-      title: 'The Art of Making Traditional Diyas: Preserving Ancient Craftsmanship',
-      excerpt: 'Learn about the traditional methods of making clay diyas, the artisans behind this craft, and why these handmade lamps are superior to mass-produced alternatives.',
-      image: '/images/blog/diya-making.jpg',
-      category: 'Craftsmanship',
-      date: 'September 15, 2023',
-      author: 'Vikram Singh',
-      authorImage: '/images/team/quality-manager.jpg',
-      slug: 'traditional-diya-making',
-    },
-    {
-      id: 4,
-      title: 'Benefits of Cow Products in Daily Life: An Ayurvedic Perspective',
-      excerpt: 'Discover how traditional cow products like ghee, cow dung, and cow urine have been used in Ayurvedic practices for centuries and their benefits in modern life.',
-      image: '/images/blog/cow-products.jpg',
-      category: 'Ayurveda',
-      date: 'August 30, 2023',
-      author: 'Dr. Ananya Desai',
-      authorImage: '/images/team/customer-lead.jpg',
-      slug: 'benefits-of-cow-products',
-    },
-    {
-      id: 5,
-      title: 'Diwali Decoration Ideas: Blending Tradition with Modern Aesthetics',
-      excerpt: 'Get inspired with these beautiful Diwali decoration ideas that honor traditional elements while incorporating contemporary design principles.',
-      image: '/images/blog/diwali-decor.jpg',
-      category: 'Festivals',
-      date: 'August 22, 2023',
-      author: 'Priya Patel',
-      authorImage: '/images/team/artisan-head.jpg',
-      slug: 'diwali-decoration-ideas',
-    },
-    {
-      id: 6,
-      title: 'The Science Behind Temple Bells: Acoustics and Spiritual Vibrations',
-      excerpt: 'Explore the scientific principles behind the design of traditional temple bells and how their sound creates beneficial vibrations for meditation and spiritual practices.',
-      image: '/images/blog/temple-bells.jpg',
-      category: 'Science & Spirituality',
-      date: 'August 10, 2023',
-      author: 'Vikram Singh',
-      authorImage: '/images/team/quality-manager.jpg',
-      slug: 'science-of-temple-bells',
-    },
-    {
-      id: 7,
-      title: 'Essential Puja Items: A Guide for Beginners',
-      excerpt: 'A comprehensive guide for those new to Hindu rituals, explaining the essential items needed for a basic puja and their significance in the worship process.',
-      image: '/images/blog/puja-guide.jpg',
-      category: 'Rituals',
-      date: 'July 25, 2023',
-      author: 'Ramesh Sharma',
-      authorImage: '/images/team/founder.jpg',
-      slug: 'essential-puja-items-guide',
-    },
-  ];
+  // In a real implementation, we would fetch blog posts from an API
+  useEffect(() => {
+    // Simulate API loading
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1000);
 
+    return () => clearTimeout(timer);
+  }, []);
+
+  // These would come from an API in a real implementation
   const categories = [
     'All Categories',
     'Festivals',
@@ -138,143 +73,31 @@ export default function BlogPage() {
           </div>
         </div>
 
-        {/* Featured Post */}
-        <div className="mb-12">
-          <div className="bg-white rounded-xl shadow-md overflow-hidden">
-            <div className="md:flex">
-              <div className="md:w-1/2 relative h-64 md:h-auto">
-                <ImageWithFallback
-                  src={featuredPost.image}
-                  alt={featuredPost.title}
-                  fill
-                  className="object-cover"
-                />
-                <div className="absolute top-4 left-4 bg-gradient-purple-pink text-white text-xs px-3 py-1.5 rounded-full font-medium shadow-md">
-                  Featured
-                </div>
-              </div>
-              <div className="md:w-1/2 p-6 md:p-8">
-                <div className="flex items-center mb-4">
-                  <span className="bg-primary/10 text-primary text-xs px-3 py-1 rounded-full font-medium">
-                    {featuredPost.category}
-                  </span>
-                  <span className="text-text-light text-sm ml-3">{featuredPost.date}</span>
-                </div>
-                <h2 className="text-2xl font-bold mb-4 text-primary hover:text-primary-dark transition-colors">
-                  <Link href={`/blog/${featuredPost.slug}`}>
-                    {featuredPost.title}
-                  </Link>
-                </h2>
-                <p className="text-text-light mb-6">
-                  {featuredPost.excerpt}
-                </p>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 rounded-full overflow-hidden relative mr-3">
-                      <ImageWithFallback
-                        src={featuredPost.authorImage}
-                        alt={featuredPost.author}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                    <span className="font-medium">{featuredPost.author}</span>
-                  </div>
-                  <Link
-                    href={`/blog/${featuredPost.slug}`}
-                    className="text-primary hover:text-primary-dark font-medium flex items-center transition-colors"
-                  >
-                    Read More
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
-                  </Link>
-                </div>
-              </div>
-            </div>
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <LoadingSpinner size="lg" />
           </div>
-        </div>
-
-        {/* Blog Posts Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {blogPosts.map((post) => (
-            <div key={post.id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="relative h-48 w-full">
-                <ImageWithFallback
-                  src={post.image}
-                  alt={post.title}
-                  fill
-                  className="object-cover"
-                />
-                <div className="absolute top-4 left-4 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full font-medium">
-                  {post.category}
-                </div>
-              </div>
-              <div className="p-6">
-                <p className="text-text-light text-sm mb-2">{post.date}</p>
-                <h3 className="text-xl font-bold mb-3 text-primary hover:text-primary-dark transition-colors">
-                  <Link href={`/blog/${post.slug}`}>
-                    {post.title}
-                  </Link>
-                </h3>
-                <p className="text-text-light mb-4 line-clamp-3">
-                  {post.excerpt}
-                </p>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 rounded-full overflow-hidden relative mr-2">
-                      <ImageWithFallback
-                        src={post.authorImage}
-                        alt={post.author}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                    <span className="text-sm font-medium">{post.author}</span>
-                  </div>
-                  <Link
-                    href={`/blog/${post.slug}`}
-                    className="text-primary hover:text-primary-dark text-sm font-medium flex items-center transition-colors"
-                  >
-                    Read More
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
-                  </Link>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Pagination */}
-        <div className="mt-12 flex justify-center">
-          <nav className="flex items-center space-x-2">
-            <button className="w-10 h-10 rounded-full flex items-center justify-center border border-gray-300 text-text-light hover:bg-gray-100 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        ) : (
+          <div className="bg-white rounded-xl shadow-md p-12 text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 mx-auto text-primary/50 mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+            <h2 className="text-2xl font-bold text-primary mb-4">Blog Coming Soon</h2>
+            <p className="text-text-light max-w-2xl mx-auto mb-8">
+              We're working on creating valuable content about spirituality, traditional practices, and cultural heritage.
+              Check back soon for articles, guides, and insights.
+            </p>
+            <Link
+              href="/products"
+              className="inline-flex items-center bg-gradient-purple-pink text-white px-6 py-3 rounded-full font-medium hover:opacity-90 transition-opacity"
+            >
+              Explore Our Products
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
-            </button>
-            <button className="w-10 h-10 rounded-full flex items-center justify-center bg-gradient-purple-pink text-white">
-              1
-            </button>
-            <button className="w-10 h-10 rounded-full flex items-center justify-center border border-gray-300 text-text-light hover:bg-gray-100 transition-colors">
-              2
-            </button>
-            <button className="w-10 h-10 rounded-full flex items-center justify-center border border-gray-300 text-text-light hover:bg-gray-100 transition-colors">
-              3
-            </button>
-            <span className="text-text-light">...</span>
-            <button className="w-10 h-10 rounded-full flex items-center justify-center border border-gray-300 text-text-light hover:bg-gray-100 transition-colors">
-              8
-            </button>
-            <button className="w-10 h-10 rounded-full flex items-center justify-center border border-gray-300 text-text-light hover:bg-gray-100 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </nav>
-        </div>
+            </Link>
+          </div>
+        )}
 
         {/* Newsletter Section */}
         <div className="mt-16 bg-gradient-purple-pink text-white rounded-xl p-8">

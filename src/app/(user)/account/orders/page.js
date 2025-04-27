@@ -105,55 +105,7 @@ export default function OrdersPage() {
   // Status badge component
   const StatusBadge = ({ status }) => {
     const statusConfig = {
-      // Lower case status values (from mock data)
-      delivered: {
-        color: 'bg-green-100 text-green-800',
-        text: 'Delivered',
-        icon: (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        ),
-      },
-      processing: {
-        color: 'bg-blue-100 text-blue-800',
-        text: 'Processing',
-        icon: (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        ),
-      },
-      shipped: {
-        color: 'bg-purple-100 text-purple-800',
-        text: 'Shipped',
-        icon: (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
-          </svg>
-        ),
-      },
-      cancelled: {
-        color: 'bg-red-100 text-red-800',
-        text: 'Cancelled',
-        icon: (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        ),
-      },
-      returned: {
-        color: 'bg-yellow-100 text-yellow-800',
-        text: 'Returned',
-        icon: (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
-          </svg>
-        ),
-      },
-
-      // Database status values (capitalized)
+      // Database status values
       Pending: {
         color: 'bg-yellow-100 text-yellow-800',
         text: 'Pending',
@@ -311,7 +263,7 @@ export default function OrdersPage() {
                       <StatusBadge status={order.status} />
                     </div>
                     <p className="text-sm text-text-light">
-                      Placed on {formatDate(order.createdAt || order.date)}
+                      Placed on {formatDate(order.createdAt)}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -355,8 +307,8 @@ export default function OrdersPage() {
                 {/* Order Items */}
                 <div className="p-4">
                   <div className="space-y-4">
-                    {(order.orderItems || order.items).map((item) => (
-                      <div key={item._id || item.id || item.product} className="flex items-center gap-4">
+                    {order.orderItems.map((item) => (
+                      <div key={item._id || item.product} className="flex items-center gap-4">
                         <div className="relative h-16 w-16 flex-shrink-0 rounded-md overflow-hidden">
                           <ImageWithFallback
                             src={item.image}
@@ -367,16 +319,16 @@ export default function OrdersPage() {
                         </div>
                         <div className="flex-grow">
                           <h4 className="font-medium text-primary hover:text-primary-dark transition-colors">
-                            <Link href={`/products/${item.product || item.id}`}>
+                            <Link href={`/products/${item.product}`}>
                               {item.name}
                             </Link>
                           </h4>
                           <p className="text-sm text-text-light">
-                            Qty: {item.qty || item.quantity} × ₹{item.price}
+                            Qty: {item.qty} × ₹{item.price}
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold">₹{item.price * (item.qty || item.quantity)}</p>
+                          <p className="font-semibold">₹{item.price * item.qty}</p>
                         </div>
                       </div>
                     ))}
@@ -413,7 +365,7 @@ export default function OrdersPage() {
                   </div>
                   <div className="text-right">
                     <p className="text-sm text-text-light mb-1">Order Total:</p>
-                    <p className="text-xl font-bold text-primary">₹{order.totalPrice || order.total}</p>
+                    <p className="text-xl font-bold text-primary">₹{order.totalPrice}</p>
                   </div>
                 </div>
               </div>

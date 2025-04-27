@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import ImageWithFallback from '@/components/common/ImageWithFallback';
@@ -35,147 +34,27 @@ export default function OrderDetailPage({ params }) {
       try {
         setIsLoading(true);
 
-        // First try to fetch from API if we have a MongoDB ID
-        if (id.length === 24 || id.startsWith('PS')) {
-          try {
-            const response = await fetch(`/api/orders/${id}`, {
-              headers: {
-                'Authorization': `Bearer ${user.token}`
-              }
-            });
-
-            if (response.ok) {
-              const data = await response.json();
-              setOrder(data);
-              setIsLoading(false);
-              return;
+        try {
+          const response = await fetch(`/api/orders/${id}`, {
+            headers: {
+              'Authorization': `Bearer ${user.token}`
             }
-          } catch (apiError) {
-            console.error('Error fetching from API:', apiError);
-            // Continue to mock data if API fails
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            setOrder(data);
+          } else {
+            // Handle error responses based on status code
+            if (response.status === 404) {
+              setError('Order not found. Please check the order ID and try again.');
+            } else {
+              setError('Failed to load order. Please try again later.');
+            }
           }
-        }
-
-        // If API fetch fails or ID is not a MongoDB ID, use mock data
-        // This is for development/demo purposes
-        const mockOrders = [
-          {
-            id: 'ORD123456789',
-            date: '2023-10-15',
-            status: 'delivered',
-            total: 2499,
-            items: [
-              {
-                id: 1,
-                name: 'Brass Ganesh Idol',
-                price: 1299,
-                quantity: 1,
-                image: '/images/products/ganesh-idol.jpg',
-              },
-              {
-                id: 2,
-                name: 'Pure Cow Ghee',
-                price: 699,
-                quantity: 1,
-                image: '/images/products/cow-ghee.jpg',
-              },
-              {
-                id: 3,
-                name: 'Rudraksha Mala',
-                price: 799,
-                quantity: 1,
-                image: '/images/products/rudraksha-mala.jpg',
-              },
-            ],
-            shippingAddress: {
-              name: 'John Doe',
-              address: '123 Temple Street, Spiritual District',
-              city: 'New Delhi',
-              state: 'Delhi',
-              pincode: '110001',
-              country: 'India',
-              phone: '9876543210',
-            },
-            paymentMethod: 'Credit Card',
-            deliveryDate: '2023-10-20',
-            trackingId: 'TRK987654321',
-          },
-          {
-            id: 'ORD987654321',
-            date: '2023-09-28',
-            status: 'processing',
-            total: 1598,
-            items: [
-              {
-                id: 4,
-                name: 'Handmade Clay Diyas (Set of 12)',
-                price: 349,
-                quantity: 1,
-                image: '/images/products/clay-diyas.jpg',
-              },
-              {
-                id: 5,
-                name: 'Brass Kuber Diya',
-                price: 899,
-                quantity: 1,
-                image: '/images/products/kuber-diya.jpg',
-              },
-              {
-                id: 6,
-                name: 'Rangoli Color Set',
-                price: 299,
-                quantity: 1,
-                image: '/images/products/rangoli-colors.jpg',
-              },
-            ],
-            shippingAddress: {
-              name: 'John Doe',
-              address: '123 Temple Street, Spiritual District',
-              city: 'New Delhi',
-              state: 'Delhi',
-              pincode: '110001',
-              country: 'India',
-              phone: '9876543210',
-            },
-            paymentMethod: 'UPI',
-            deliveryDate: 'Expected by Oct 30, 2023',
-            trackingId: 'TRK123456789',
-          },
-          {
-            id: 'ORD456789123',
-            date: '2023-08-15',
-            status: 'cancelled',
-            total: 4299,
-            items: [
-              {
-                id: 7,
-                name: 'Silver Plated Durga Idol',
-                price: 4299,
-                quantity: 1,
-                image: '/images/products/durga-idol.jpg',
-              },
-            ],
-            shippingAddress: {
-              name: 'John Doe',
-              address: '123 Temple Street, Spiritual District',
-              city: 'New Delhi',
-              state: 'Delhi',
-              pincode: '110001',
-              country: 'India',
-              phone: '9876543210',
-            },
-            paymentMethod: 'Net Banking',
-            cancellationReason: 'Changed my mind',
-            refundStatus: 'Refunded',
-          },
-        ];
-
-        const mockOrder = mockOrders.find(order => order.id === id);
-
-        if (mockOrder) {
-          setOrder(mockOrder);
-        } else {
-          setError('Order not found');
+        } catch (apiError) {
+          console.error('Error fetching from API:', apiError);
+          setError('Network error. Please check your connection and try again.');
         }
       } catch (error) {
         console.error('Error fetching order:', error);
