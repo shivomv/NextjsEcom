@@ -21,6 +21,7 @@
     "dotenv": "^16.4.5",
     "esm": "^3.2.25",
     "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.16.0",
     "mongoose": "^8.13.2",
     "next": "15.3.0",
     "next-cloudinary": "^6.16.0",

@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Script from 'next/script';
+import config from '@/config';
 
-export default function CloudinaryUploadWidget({ 
-  onUploadSuccess, 
+export default function CloudinaryUploadWidget({
+  onUploadSuccess,
   onUploadError,
   buttonText = 'Upload Image',
   buttonClassName = '',
@@ -31,9 +32,9 @@ export default function CloudinaryUploadWidget({
 
     // Default options
     const defaultOptions = {
-      cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-      uploadPreset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
-      folder: 'my-shop',
+      cloudName: config.cloudinary.cloudName,
+      uploadPreset: config.cloudinary.uploadPreset,
+      folder: config.cloudinary.defaultFolder,
       multiple: multiple,
       resourceType: 'image',
       maxImageFileSize: 5000000, // 5MB

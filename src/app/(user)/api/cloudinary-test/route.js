@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
+import config from '@/config';
 
 // Configure Cloudinary
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+  cloud_name: config.cloudinary.cloudName,
+  api_key: config.cloudinary.apiKey,
+  api_secret: config.cloudinary.apiSecret,
 });
 
 /**
@@ -17,9 +18,9 @@ export async function GET() {
   try {
     // Test Cloudinary configuration
     const testResult = {
-      cloudName: process.env.CLOUDINARY_CLOUD_NAME,
-      apiKey: process.env.CLOUDINARY_API_KEY ? 'Set (hidden)' : 'Not set',
-      apiSecret: process.env.CLOUDINARY_API_SECRET ? 'Set (hidden)' : 'Not set',
+      cloudName: config.cloudinary.cloudName,
+      apiKey: config.cloudinary.apiKey ? 'Set (hidden)' : 'Not set',
+      apiSecret: config.cloudinary.apiSecret ? 'Set (hidden)' : 'Not set',
     };
 
     // Test Cloudinary connection

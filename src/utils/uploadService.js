@@ -1,12 +1,14 @@
 'use client';
 
+import config from '@/config';
+
 /**
  * Upload a single file to the server
  * @param {File} file - The file to upload
  * @param {string} folder - The folder to upload to in Cloudinary
  * @returns {Promise<Object>} - The upload response
  */
-export const uploadFile = async (file, folder = 'my-shop', token = null) => {
+export const uploadFile = async (file, folder = config.cloudinary.defaultFolder, token = null) => {
   try {
     // Check if filename has invalid characters
     if (file.name && file.name.match(/[\/\\:*?"<>|]/)) {
@@ -71,7 +73,7 @@ export const uploadFile = async (file, folder = 'my-shop', token = null) => {
  * @param {string} folder - The folder to upload to in Cloudinary
  * @returns {Promise<Array<Object>>} - Array of upload responses
  */
-export const uploadMultipleFiles = async (files, folder = 'my-shop', token = null) => {
+export const uploadMultipleFiles = async (files, folder = config.cloudinary.defaultFolder, token = null) => {
   try {
     console.log(`Uploading ${files.length} files to folder: ${folder}`);
 
