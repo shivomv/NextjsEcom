@@ -28,9 +28,14 @@ async function dbConnect() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
+      ...config.database.options
     };
 
+    console.log('Connecting to MongoDB with URI:', MONGODB_URI.substring(0, 20) + '...');
+    console.log('Connection options:', JSON.stringify(opts));
+
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+      console.log('MongoDB connection successful');
       return mongoose;
     });
   }
@@ -38,8 +43,15 @@ async function dbConnect() {
   try {
     cached.conn = await cached.promise;
   } catch (e) {
+    console.error('MongoDB connection error:', e);
+    console.error('Error details:', {
+      name: e.name,
+      message: e.message,
+      code: e.code,
+      stack: e.stack,
+    });
     cached.promise = null;
-    throw e;
+    throw new Error(`Database connection failed: ${e.message}`);
   }
 
   return cached.conn;

@@ -11,13 +11,18 @@ const config = {
   database: {
     // MongoDB connection string - use production URL when in production
     uri: process.env.NODE_ENV === 'production'
-      ? 'mongodb+srv://shivomv:Shivom123@cluster0.ixvxnxl.mongodb.net/prashasaksamiti'
+      ? 'mongodb+srv://Shivom:Shivom%40123@cluster0.adi7ccd.mongodb.net/prashasaksamiti?retryWrites=true&w=majority&appName=Cluster0'
       : 'mongodb://localhost:27017/prashasaksamiti',
     // For reference, production connection string format:
-    // uri: 'mongodb+srv://username:password@cluster.mongodb.net/prashasaksamiti',
+    // uri: 'mongodb+srv://username:password@cluster.mongodb.net/dbname',
     options: {
       useNewUrlParser: true,
       useUnifiedTopology: true,
+      ssl: true,
+      retryWrites: true,
+      w: 'majority',
+      connectTimeoutMS: 30000,
+      socketTimeoutMS: 30000,
     }
   },
 
