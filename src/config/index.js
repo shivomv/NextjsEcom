@@ -9,10 +9,8 @@
 const config = {
   // Database Configuration
   database: {
-    // MongoDB connection string - use production URL when in production
-    uri: process.env.NODE_ENV === 'production'
-      ? 'mongodb+srv://Shivom:Shivom%40123@cluster0.adi7ccd.mongodb.net/prashasaksamiti?retryWrites=true&w=majority&appName=Cluster0'
-      : 'mongodb://localhost:27017/prashasaksamiti',
+    // MongoDB connection string - same for both production and development
+    uri: 'mongodb://atlas-sql-680e6fa9ee5da11fa31ac919-zky2fx.a.query.mongodb.net/myVirtualDatabase?ssl=true&authSource=admin',
     // For reference, production connection string format:
     // uri: 'mongodb+srv://username:password@cluster.mongodb.net/dbname',
     options: {
