@@ -9,7 +9,17 @@ import CloudinaryImagePicker from '@/components/common/CloudinaryImagePicker';
 export default function CategoryForm({ initialData, onSubmit, isSubmitting, isEditing = false }) {
   const router = useRouter();
   const { user } = useAuth();
-  const [formData, setFormData] = useState(initialData);
+
+  // Process initialData to handle parent properly
+  const processedInitialData = {
+    ...initialData,
+    // If parent is an object (populated from DB), extract the ID
+    parent: initialData.parent && typeof initialData.parent === 'object'
+      ? initialData.parent._id
+      : initialData.parent
+  };
+
+  const [formData, setFormData] = useState(processedInitialData);
   const [parentCategories, setParentCategories] = useState([]);
   const [isLoadingParentCategories, setIsLoadingParentCategories] = useState(true);
   const [errors, setErrors] = useState({});
@@ -50,9 +60,18 @@ export default function CategoryForm({ initialData, onSubmit, isSubmitting, isEd
     const { name, value, type, checked } = e.target;
 
     // Handle different input types
-    const newValue = type === 'checkbox' ? checked :
-                    (name === 'order') ?
-                    (value === '' ? '' : Number(value)) : value;
+    let newValue;
+
+    if (type === 'checkbox') {
+      newValue = checked;
+    } else if (name === 'order') {
+      newValue = value === '' ? '' : Number(value);
+    } else if (name === 'parent') {
+      // Convert empty string to null for parent field to avoid ObjectId casting error
+      newValue = value === '' ? null : value;
+    } else {
+      newValue = value;
+    }
 
     setFormData({
       ...formData,

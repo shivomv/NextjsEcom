@@ -13,7 +13,8 @@ export async function GET(request, context) {
     await dbConnect();
     const { id } = await context.params;
 
-    const category = await Category.findById(id);
+    // Populate the parent field to get parent category details
+    const category = await Category.findById(id).populate('parent', 'name slug');
 
     if (!category) {
       return NextResponse.json(

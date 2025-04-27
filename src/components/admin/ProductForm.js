@@ -10,7 +10,17 @@ import CloudinaryMultiImagePicker from '@/components/common/CloudinaryMultiImage
 export default function ProductForm({ initialData, onSubmit, isSubmitting, isEditing = false }) {
   const router = useRouter();
   const { user } = useAuth();
-  const [formData, setFormData] = useState(initialData);
+
+  // Process initialData to handle category properly
+  const processedInitialData = {
+    ...initialData,
+    // If category is an object (populated from DB), extract the ID
+    category: initialData.category && typeof initialData.category === 'object'
+      ? initialData.category._id
+      : initialData.category
+  };
+
+  const [formData, setFormData] = useState(processedInitialData);
   const [categories, setCategories] = useState([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [newSpecification, setNewSpecification] = useState({ name: '', value: '' });
@@ -313,7 +323,7 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting, isEdi
                 <select
                   id="category"
                   name="category"
-                  value={formData.category}
+                  value={formData.category && typeof formData.category === 'object' ? formData.category._id : formData.category}
                   onChange={handleChange}
                   className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary ${
                     errors.category ? 'border-red-500' : ''
