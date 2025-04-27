@@ -132,7 +132,7 @@ export default function AdminDashboardPage() {
         const formattedLowStockProducts = lowStockData.products.map(product => ({
           id: product._id,
           name: product.name,
-          stock: product.countInStock,
+          stock: product.stock,
           threshold: 5, // Default threshold is now 5
           image: product.image || (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : '/images/placeholder.jpg')
         }));

@@ -24,7 +24,7 @@ export async function GET(request) {
 
     // Get out of stock products (exactly 0)
     const outOfStockProducts = await Product.find({
-      countInStock: 0,
+      stock: 0,
       isActive: true
     })
       .populate('category', 'name slug')
@@ -33,7 +33,7 @@ export async function GET(request) {
 
     // Get total count of out of stock products
     const totalOutOfStock = await Product.countDocuments({
-      countInStock: 0,
+      stock: 0,
       isActive: true
     });
 

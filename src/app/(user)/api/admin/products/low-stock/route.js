@@ -25,16 +25,16 @@ export async function GET(request) {
 
     // Get low stock products (greater than 0 but less than or equal to threshold)
     const lowStockProducts = await Product.find({
-      countInStock: { $gt: 0, $lte: threshold },
+      stock: { $gt: 0, $lte: threshold },
       isActive: true
     })
       .populate('category', 'name slug')
-      .sort({ countInStock: 1 })
+      .sort({ stock: 1 })
       .limit(limit);
 
     // Get total count of low stock products
     const totalLowStock = await Product.countDocuments({
-      countInStock: { $gt: 0, $lte: threshold },
+      stock: { $gt: 0, $lte: threshold },
       isActive: true
     });
 
