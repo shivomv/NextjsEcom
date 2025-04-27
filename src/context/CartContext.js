@@ -218,7 +218,8 @@ export const CartProvider = ({ children }) => {
     };
 
     fetchCart();
-  }, [isAuthenticated, user, state.cartItems.length, dispatch]);
+  // Remove state.cartItems.length from dependencies to prevent infinite loops
+  }, [isAuthenticated, user, dispatch]);
 
   // Save cart to API or localStorage whenever it changes - client-side only
   useEffect(() => {
@@ -251,6 +252,40 @@ export const CartProvider = ({ children }) => {
   // Add item to cart
   const addToCart = async (product, qty) => {
     try {
+      // Check if product is out of stock (stock is undefined, null, 0, or negative)
+      if (product.stock === undefined || product.stock === null || product.stock <= 0) {
+        console.error('Cannot add out-of-stock product to cart:', product.name);
+
+        // Show toast notification if available
+        if (typeof window !== 'undefined' && window.toast) {
+          window.toast.error('This product is out of stock and cannot be added to your cart.');
+        } else {
+          // Fallback to alert in development
+          if (process.env.NODE_ENV === 'development') {
+            alert('This product is out of stock and cannot be added to your cart.');
+          }
+        }
+
+        return false;
+      }
+
+      // Check if requested quantity is available
+      if (qty > product.stock) {
+        console.error(`Cannot add ${qty} units of ${product.name} to cart. Only ${product.stock} available.`);
+
+        // Show toast notification if available
+        if (typeof window !== 'undefined' && window.toast) {
+          window.toast.error(`Cannot add ${qty} units to cart. Only ${product.stock} available.`);
+        } else {
+          // Fallback to alert in development
+          if (process.env.NODE_ENV === 'development') {
+            alert(`Cannot add ${qty} units to cart. Only ${product.stock} available.`);
+          }
+        }
+
+        return false;
+      }
+
       setLoading(true);
 
       // Update local state first for immediate UI feedback
@@ -271,8 +306,11 @@ export const CartProvider = ({ children }) => {
       if (isAuthenticated) {
         await api.cart.addToCart(product._id, qty);
       }
+
+      return true;
     } catch (error) {
       console.error('Error adding to cart:', error);
+      return false;
     } finally {
       setLoading(false);
     }

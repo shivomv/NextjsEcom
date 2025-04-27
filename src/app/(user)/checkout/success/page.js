@@ -39,9 +39,6 @@ export default function OrderSuccessPage() {
         }
 
         setOrder(data);
-
-        // Clear cart after successful order
-        clearCart();
       } catch (error) {
         console.error('Error fetching order:', error);
         setError(error.message || 'An error occurred while fetching your order');
@@ -55,7 +52,15 @@ export default function OrderSuccessPage() {
     } else {
       setLoading(false);
     }
-  }, [orderId, isAuthenticated, user, clearCart]);
+  }, [orderId, isAuthenticated, user]);
+
+  // Clear cart once when order is loaded successfully
+  useEffect(() => {
+    if (order && !loading && !error) {
+      // Clear cart only once when order is successfully loaded
+      clearCart();
+    }
+  }, [order, loading, error, clearCart]);
 
   // Format date
   const formatDate = (dateString) => {
