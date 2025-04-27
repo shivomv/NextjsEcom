@@ -11,13 +11,19 @@ export default function ProductCard({ product }) {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   const handleAddToCart = () => {
+    // Prevent adding out-of-stock items (stock is undefined, null, 0, or negative)
+    if (product.stock === undefined || product.stock === null || product.stock <= 0) {
+      console.error('Cannot add out-of-stock product to cart:', product.name);
+      return;
+    }
+
     setIsAddingToCart(true);
-    addToCart(product, 1);
+    const success = addToCart(product, 1);
 
     // Reset button state after animation
     setTimeout(() => {
       setIsAddingToCart(false);
-    }, 1000);
+    }, success ? 1000 : 300); // Shorter animation if failed
   };
 
   // Format price with Indian Rupee symbol
@@ -41,8 +47,8 @@ export default function ProductCard({ product }) {
 
           {/* Out of stock overlay */}
           {product.stock <= 0 && (
-            <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
-              <div className="bg-red-600 text-white px-4 py-2 rounded-md font-bold transform rotate-45 shadow-lg">
+            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+              <div className="bg-red-600 text-white px-4 py-2 rounded-md font-bold transform rotate-45 shadow-lg border-2 border-white">
                 OUT OF STOCK
               </div>
             </div>
@@ -71,8 +77,15 @@ export default function ProductCard({ product }) {
           <h3 className="text-sm text-gradient-purple-pink font-medium flex items-center">
             <span className="w-1.5 h-1.5 rounded-full bg-gradient-purple-pink mr-1.5"></span>
             {product.category?.name || 'Religious Product'}
+
+            {/* Stock status badge next to category */}
+            {product.stock <= 0 && (
+              <span className="ml-2 bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full font-bold">
+                OUT OF STOCK
+              </span>
+            )}
           </h3>
-          <h2 className="text-lg font-bold mb-1 hover:text-gradient-purple-pink transition-colors line-clamp-2 font-heading">
+          <h2 className="text-lg font-bold mb-1 hover:text-gradient-purple-pink transition-colors line-clamp-2 font-heading flex items-center">
             {product.name}
           </h2>
           <p className="text-text-muted mb-2 line-clamp-1 font-hindi">{product.hindiName}</p>
@@ -111,31 +124,34 @@ export default function ProductCard({ product }) {
             )}
           </div>
 
-          <button
-            onClick={handleAddToCart}
-            disabled={isAddingToCart || product.stock <= 0}
-            className={`${
-              product.stock <= 0
-                ? 'bg-gray-300 cursor-not-allowed'
-                : isAddingToCart
-                  ? 'bg-gradient-pink-orange'
-                  : 'bg-gradient-pink-orange hover:bg-secondary'
-            } text-white p-2.5 rounded-md transition-all duration-300 flex items-center justify-center shadow-md hover:shadow-lg border border-white/20 transform hover:-translate-y-0.5`}
-            aria-label={product.stock <= 0 ? 'Out of Stock' : 'Add to Cart'}
-            title={product.stock <= 0 ? 'Out of Stock' : 'Add to Cart'}
-          >
-            {product.stock <= 0 ? (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          {product.stock <= 0 ? (
+            <div className="bg-red-100 text-red-600 p-2.5 rounded-md flex items-center justify-center border-2 border-red-400 shadow-md">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-            ) : isAddingToCart ? (
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-            ) : (
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
-              </svg>
-            )}
-          </button>
+              <span className="text-sm font-bold">OUT OF STOCK</span>
+            </div>
+          ) : (
+            <button
+              onClick={handleAddToCart}
+              disabled={isAddingToCart}
+              className={`${
+                isAddingToCart
+                  ? 'bg-gradient-pink-orange'
+                  : 'bg-gradient-pink-orange hover:bg-secondary'
+              } text-white p-2.5 rounded-md transition-all duration-300 flex items-center justify-center shadow-md hover:shadow-lg border border-white/20 transform hover:-translate-y-0.5`}
+              aria-label="Add to Cart"
+              title="Add to Cart"
+            >
+              {isAddingToCart ? (
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+              ) : (
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+              )}
+            </button>
+          )}
         </div>
 
         {/* Stock indicator */}
