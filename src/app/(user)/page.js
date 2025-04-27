@@ -33,80 +33,8 @@ export default function Home() {
     fetchFeaturedProducts();
   }, []);
 
-  // Fallback featured products
-  const mockProducts = [
-    {
-      id: 1,
-      name: "Brass Puja Thali Set",
-      price: 1299,
-      originalPrice: 1599,
-      image: "/images/products/puja-thali.jpg",
-      rating: 4.8,
-      reviews: 124,
-      slug: "brass-puja-thali-set"
-    },
-    {
-      id: 2,
-      name: "Sandalwood Incense Sticks",
-      price: 199,
-      originalPrice: 249,
-      image: "/images/products/incense.jpg",
-      rating: 4.6,
-      reviews: 89,
-      slug: "sandalwood-incense-sticks"
-    },
-    {
-      id: 3,
-      name: "Silver Lakshmi Ganesh Idol",
-      price: 2499,
-      originalPrice: 2999,
-      image: "/images/products/idol.jpg",
-      rating: 4.9,
-      reviews: 56,
-      slug: "silver-lakshmi-ganesh-idol"
-    },
-    {
-      id: 4,
-      name: "Handcrafted Diya Set",
-      price: 599,
-      originalPrice: 799,
-      image: "/images/products/diya.jpg",
-      rating: 4.7,
-      reviews: 112,
-      slug: "handcrafted-diya-set"
-    },
-  ];
-
-  // Fallback categories
-  const fallbackCategories = [
-    {
-      id: 1,
-      name: "Puja Items",
-      image: "/images/categories/puja-items.jpg",
-      slug: "puja-items"
-    },
-    {
-      id: 2,
-      name: "Idols & Statues",
-      image: "/images/categories/idols.jpg",
-      slug: "idols-statues"
-    },
-    {
-      id: 3,
-      name: "Incense & Fragrances",
-      image: "/images/categories/incense.jpg",
-      slug: "incense-fragrances"
-    },
-    {
-      id: 4,
-      name: "Spiritual Books",
-      image: "/images/categories/books.jpg",
-      slug: "spiritual-books"
-    },
-  ];
-
-  // Use real data or fallback to mock data
-  const displayProducts = featuredProducts.length > 0 ? featuredProducts : mockProducts;
+  // Use fetched products
+  const displayProducts = featuredProducts;
 
   // Handle add to cart
   const handleAddToCart = (product) => {
@@ -162,7 +90,7 @@ export default function Home() {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            {(parentCategories.length > 0 ? parentCategories : fallbackCategories).map((category) => (
+            {parentCategories.map((category) => (
               <Link
                 href={`/category/${category.slug}`}
                 key={category._id || category.id}

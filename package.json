@@ -7,8 +7,7 @@
     "build": "next build",
     "start": "next start",
     "start:custom": "node server.js",
-    "lint": "next lint",
-    "data:seed": "node -r esm src/utils/seed/run-seed.js"
+    "lint": "next lint"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

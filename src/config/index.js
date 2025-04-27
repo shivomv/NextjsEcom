@@ -2,21 +2,18 @@
  * Application Configuration
  *
  * This file contains all the configuration values for the application.
- * Instead of using environment variables, we're using hardcoded values
- * to simplify deployment.
+ * We use environment variables for sensitive information and provide
+ * fallback values for development.
  */
 
 const config = {
   // Database Configuration
   database: {
-    // MongoDB connection string - same for both production and development
-    uri: 'mongodb://atlas-sql-680e6fa9ee5da11fa31ac919-zky2fx.a.query.mongodb.net/myVirtualDatabase?ssl=true&authSource=admin',
-    // For reference, production connection string format:
-    // uri: 'mongodb+srv://username:password@cluster.mongodb.net/dbname',
+    // MongoDB connection string from environment variable
+    uri: process.env.MONGODB_URI,
     options: {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      ssl: true,
       retryWrites: true,
       w: 'majority',
       connectTimeoutMS: 30000,
@@ -27,9 +24,9 @@ const config = {
   // Authentication Configuration
   auth: {
     // JWT secret key for token generation and validation
-    jwtSecret: 'your_jwt_secret_key',
+    jwtSecret: process.env.JWT_SECRET || 'development_jwt_secret_key',
     // JWT expiration time
-    jwtExpire: '30d',
+    jwtExpire: process.env.JWT_EXPIRE || '30d',
     // Cookie options
     cookieOptions: {
       httpOnly: true,
@@ -41,15 +38,15 @@ const config = {
   // Cloudinary Configuration
   cloudinary: {
     // Cloudinary cloud name
-    cloudName: 'djv7pwnju',
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
     // Cloudinary API key
-    apiKey: '955661643549672',
+    apiKey: process.env.CLOUDINARY_API_KEY,
     // Cloudinary API secret
-    apiSecret: 'FDQIr_OPTSNzuG8DrTiNNsghpPg',
+    apiSecret: process.env.CLOUDINARY_API_SECRET,
     // Cloudinary upload preset
-    uploadPreset: 'PSEcom',
+    uploadPreset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
     // Cloudinary URL
-    url: 'cloudinary://955661643549672:FDQIr_OPTSNzuG8DrTiNNsghpPg@djv7pwnju',
+    url: process.env.CLOUDINARY_URL,
     // Default folder for uploads
     defaultFolder: 'my-shop',
     // Folder structure
@@ -58,7 +55,6 @@ const config = {
       categories: 'my-shop/categories',
       banners: 'my-shop/banners',
       users: 'my-shop/users',
-      test: 'test-uploads',
     }
   },
 
