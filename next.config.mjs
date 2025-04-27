@@ -4,10 +4,10 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**',
+        hostname: 'res.cloudinary.com',
       },
     ],
-    unoptimized: true,
+    // Remove unoptimized: true to enable image optimization
   },
 };
 

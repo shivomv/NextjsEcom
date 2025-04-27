@@ -6,15 +6,8 @@ import Image from 'next/image';
 export default function ImageWithFallback({ src, fallbackSrc, alt, width, height, ...props }) {
   const [imgSrc, setImgSrc] = useState(src);
 
-  // Generate a placehold.co URL if no fallbackSrc is provided
-  const getPlaceholderUrl = () => {
-    // If width and height are provided, use them for the placeholder
-    if (width && height) {
-      return `https://placehold.co/${width}x${height}/CCCCCC/666666?text=${encodeURIComponent(alt || 'Image')}`;
-    }
-    // Default size for placeholder
-    return `https://placehold.co/600x400/CCCCCC/666666?text=${encodeURIComponent(alt || 'Image')}`;
-  };
+  // Default fallback image from public directory
+  const defaultFallbackSrc = '/images/placeholder.jpg';
 
   return (
     <Image
@@ -24,7 +17,7 @@ export default function ImageWithFallback({ src, fallbackSrc, alt, width, height
       width={width}
       height={height}
       onError={() => {
-        setImgSrc(fallbackSrc || getPlaceholderUrl());
+        setImgSrc(fallbackSrc || defaultFallbackSrc);
       }}
     />
   );

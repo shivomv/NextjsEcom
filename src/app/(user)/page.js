@@ -18,13 +18,18 @@ export default function Home() {
   useEffect(() => {
     const fetchFeaturedProducts = async () => {
       try {
+        setLoading(true);
         const response = await fetch('/api/products?sort=rating&limit=4');
         if (response.ok) {
           const data = await response.json();
           setFeaturedProducts(data.products || []);
+        } else {
+          console.error('Failed to fetch products:', response.status);
+          setFeaturedProducts([]);
         }
       } catch (error) {
         console.error('Error fetching featured products:', error);
+        setFeaturedProducts([]);
       } finally {
         setLoading(false);
       }
@@ -125,7 +130,7 @@ export default function Home() {
           <div className="flex justify-center py-12">
             <LoadingSpinner size="lg" />
           </div>
-        ) : (
+        ) : displayProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {displayProducts.map((product) => (
               <div key={product._id || product.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow">
@@ -188,6 +193,23 @@ export default function Home() {
                 </div>
               </div>
             ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 bg-white rounded-lg shadow-md">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+            </svg>
+            <h3 className="text-xl font-bold text-gray-700 mb-2">No Featured Products Available</h3>
+            <p className="text-gray-500 mb-6">Our featured products will be available soon.</p>
+            <Link
+              href="/products"
+              className="inline-flex items-center bg-gradient-purple-pink text-white px-6 py-2 rounded-full font-medium transition-colors"
+            >
+              Browse All Products
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </Link>
           </div>
         )}
 

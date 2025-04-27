@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import ImageWithFallback from '@/components/common/ImageWithFallback';
 import { useCart } from '@/context/CartContext';
 
 export default function ProductCard({ product }) {
@@ -27,23 +28,17 @@ export default function ProductCard({ product }) {
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 border border-primary/10 hover:border-primary/30">
       <Link href={`/products/${product._id}`} className="block relative h-48 sm:h-56 overflow-hidden">
-        {product.images && product.images.length > 0 ? (
-          <div className="relative w-full h-full">
-            <Image
-              src={product.images[0]}
-              alt={product.name}
-              fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className="object-cover"
-              loading="eager"
-              priority={true}
-            />
-          </div>
-        ) : (
-          <div className="bg-gray-200 w-full h-full flex items-center justify-center">
-            <span className="text-gray-500">No Image</span>
-          </div>
-        )}
+        <div className="relative w-full h-full">
+          <ImageWithFallback
+            src={product.images && product.images.length > 0 ? product.images[0] : '/images/placeholder.jpg'}
+            alt={product.name}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="object-cover"
+            loading="eager"
+            priority={true}
+          />
+        </div>
 
         {product.comparePrice > 0 && product.comparePrice > product.price && (
           <div className="absolute top-2 left-2 bg-gradient-pink-orange text-white text-xs px-3 py-1.5 rounded-full font-medium shadow-md border border-white">
