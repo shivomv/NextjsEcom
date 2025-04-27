@@ -3,9 +3,10 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import User from '@/models/userModel';
 import dbConnect from '@/utils/db';
+import config from '@/config';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
-const JWT_EXPIRE = process.env.JWT_EXPIRE || '30d';
+const JWT_SECRET = config.auth.jwtSecret;
+const JWT_EXPIRE = config.auth.jwtExpire;
 
 /**
  * Generate JWT token

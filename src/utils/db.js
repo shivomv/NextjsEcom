@@ -1,10 +1,11 @@
 import mongoose from 'mongoose';
+import config from '@/config';
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/prashasaksamiti';
+const MONGODB_URI = config.database.uri;
 
 if (!MONGODB_URI) {
   throw new Error(
-    'Please define the MONGODB_URI environment variable'
+    'MongoDB URI is not defined in config'
   );
 }
 
@@ -33,7 +34,7 @@ async function dbConnect() {
       return mongoose;
     });
   }
-  
+
   try {
     cached.conn = await cached.promise;
   } catch (e) {
