@@ -17,26 +17,26 @@ export async function GET(request) {
     }
 
     await dbConnect();
-    
+
     // Get query parameters
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit')) || 5;
-    
-    // Get out of stock products
+
+    // Get out of stock products (exactly 0)
     const outOfStockProducts = await Product.find({
-      countInStock: { $lte: 0 },
+      countInStock: 0,
       isActive: true
     })
       .populate('category', 'name slug')
       .sort({ updatedAt: -1 })
       .limit(limit);
-    
+
     // Get total count of out of stock products
     const totalOutOfStock = await Product.countDocuments({
-      countInStock: { $lte: 0 },
+      countInStock: 0,
       isActive: true
     });
-    
+
     return NextResponse.json({
       products: outOfStockProducts,
       total: totalOutOfStock

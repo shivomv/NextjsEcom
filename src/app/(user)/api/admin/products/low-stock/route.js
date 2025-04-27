@@ -17,21 +17,30 @@ export async function GET(request) {
     }
 
     await dbConnect();
-    
+
     // Get query parameters
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit')) || 5;
-    const threshold = parseInt(searchParams.get('threshold')) || 10;
-    
-    // Get low stock products
+    const threshold = parseInt(searchParams.get('threshold')) || 5; // Default to 5
+
+    // Get low stock products (greater than 0 but less than or equal to threshold)
     const lowStockProducts = await Product.find({
-      countInStock: { $gt: 0, $lt: threshold }
+      countInStock: { $gt: 0, $lte: threshold },
+      isActive: true
     })
+      .populate('category', 'name slug')
       .sort({ countInStock: 1 })
       .limit(limit);
-    
+
+    // Get total count of low stock products
+    const totalLowStock = await Product.countDocuments({
+      countInStock: { $gt: 0, $lte: threshold },
+      isActive: true
+    });
+
     return NextResponse.json({
-      products: lowStockProducts
+      products: lowStockProducts,
+      total: totalLowStock
     });
   } catch (error) {
     console.error('Error fetching low stock products:', error);

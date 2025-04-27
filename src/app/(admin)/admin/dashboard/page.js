@@ -79,8 +79,8 @@ export default function AdminDashboardPage() {
 
         const ordersData = await ordersResponse.json();
 
-        // Fetch low stock products
-        const lowStockResponse = await fetch('/api/admin/products/low-stock?limit=3&threshold=10', {
+        // Fetch low stock products (5 or fewer items)
+        const lowStockResponse = await fetch('/api/admin/products/low-stock?limit=3&threshold=5', {
           headers: {
             'Authorization': `Bearer ${user.token}`
           }
@@ -132,9 +132,9 @@ export default function AdminDashboardPage() {
         const formattedLowStockProducts = lowStockData.products.map(product => ({
           id: product._id,
           name: product.name,
-          stock: product.stock,
-          threshold: 10, // Default threshold
-          image: Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : '/images/placeholder.jpg'
+          stock: product.countInStock,
+          threshold: 5, // Default threshold is now 5
+          image: product.image || (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : '/images/placeholder.jpg')
         }));
 
         // Format out of stock products data
@@ -142,7 +142,7 @@ export default function AdminDashboardPage() {
           id: product._id,
           name: product.name,
           stock: 0,
-          image: Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : '/images/placeholder.jpg'
+          image: product.image || (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : '/images/placeholder.jpg')
         }));
 
         // Set all the data
@@ -530,6 +530,7 @@ export default function AdminDashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
                 <h3 className="text-lg font-semibold text-red-900">Out of Stock Products</h3>
+                <span className="ml-2 text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">0 in stock</span>
               </div>
               <Link href="/admin/products?filter=out-of-stock" className="text-red-600 text-sm font-medium hover:underline">
                 View All
@@ -572,7 +573,7 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Low Stock Products */}
+      {/* Running Out of Stock Products */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden mb-8">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
@@ -580,7 +581,8 @@ export default function AdminDashboardPage() {
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-yellow-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
-              <h3 className="text-lg font-semibold text-gray-900">Low Stock Products</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Running Out of Stock</h3>
+              <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">5 or fewer</span>
             </div>
             <Link href="/admin/products?filter=low-stock" className="text-primary text-sm font-medium hover:underline">
               View All Products
