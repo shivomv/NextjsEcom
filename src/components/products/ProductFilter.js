@@ -38,7 +38,12 @@ export default function ProductFilter({
   };
 
   // Group categories by parent/child relationship
-  const parentCategories = categories.filter(cat => !cat.parentCategory);
+  const parentCategories = categories.filter(cat => !cat.parent);
+
+  // Get subcategories for each parent category
+  const getSubcategories = (parentId) => {
+    return categories.filter(cat => cat.parent === parentId);
+  };
 
   return (
     <>
@@ -63,7 +68,7 @@ export default function ProductFilter({
             Sort By
           </button>
         </div>
-        
+
         {/* Sort dropdown for mobile */}
         <div className={`${isSortOpen ? 'block' : 'hidden'} bg-white p-3  shadow-md rounded-md border border-gray-200 w-full`}>
           <div className="mb-2 font-medium text-gray-700">Sort By:</div>
@@ -94,7 +99,7 @@ export default function ProductFilter({
             </button>
           </div>
         </div>
-        
+
         {/* Filter dropdown for mobile */}
         <div className={`${isFilterOpen ? 'block' : 'hidden'} bg-white p-3 mt-1 shadow-md rounded-md border border-gray-200 w-full`}>
           {/* Categories */}
@@ -113,14 +118,14 @@ export default function ProductFilter({
                   >
                     {category.name}
                     <span className="text-sm text-gray-500 ml-1">
-                      ({category.hindiName})
+                      ({category.productCount || 0})
                     </span>
                   </button>
 
                   {/* Subcategories */}
-                  {category.subcategories && category.subcategories.length > 0 && (
+                  {getSubcategories(category._id).length > 0 && (
                     <ul className="ml-4 mt-1 space-y-1">
-                      {category.subcategories.map((subcat) => (
+                      {getSubcategories(category._id).map((subcat) => (
                         <li key={subcat._id}>
                           <button
                             onClick={() => handleCategoryClick(subcat.slug)}
@@ -131,6 +136,9 @@ export default function ProductFilter({
                             }`}
                           >
                             {subcat.name}
+                            <span className="text-sm text-gray-500 ml-1">
+                              ({subcat.productCount || 0})
+                            </span>
                           </button>
                         </li>
                       ))}
@@ -246,7 +254,7 @@ export default function ProductFilter({
           </button>
         </div>
       </div>
-      
+
       {/* Desktop filters - always visible on md and up */}
       <div className="hidden md:block bg-white p-2 m-1 shadow-md rounded-md border border-gray-200">
         {/* Categories */}
@@ -265,14 +273,14 @@ export default function ProductFilter({
                 >
                   {category.name}
                   <span className="text-sm text-gray-500 ml-1">
-                    ({category.hindiName})
+                    ({category.productCount || 0})
                   </span>
                 </button>
 
                 {/* Subcategories */}
-                {category.subcategories && category.subcategories.length > 0 && (
+                {getSubcategories(category._id).length > 0 && (
                   <ul className="ml-4 mt-1 space-y-1">
-                    {category.subcategories.map((subcat) => (
+                    {getSubcategories(category._id).map((subcat) => (
                       <li key={subcat._id}>
                         <button
                           onClick={() => handleCategoryClick(subcat.slug)}
@@ -283,6 +291,9 @@ export default function ProductFilter({
                           }`}
                         >
                           {subcat.name}
+                          <span className="text-sm text-gray-500 ml-1">
+                            ({subcat.productCount || 0})
+                          </span>
                         </button>
                       </li>
                     ))}

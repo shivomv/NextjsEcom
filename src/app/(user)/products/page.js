@@ -42,10 +42,12 @@ export default function ProductsPage() {
     setSortOption(sort);
     setIsFeatured(featured);
 
-    // Fetch categories
+    // Fetch categories with product counts
     const fetchCategories = async () => {
       try {
-        const data = await categoryAPI.getCategories();
+        // Use getCategoriesWithCounts to get categories with product counts
+        const data = await categoryAPI.getCategoriesWithCounts();
+        console.log('Categories with counts:', data);
         setCategories(data);
       } catch (error) {
         console.error('Error fetching categories:', error);
