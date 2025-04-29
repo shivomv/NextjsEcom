@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Fuse from 'fuse.js';
 import ProductCard from '@/components/products/ProductCard';
 import ProductFilter from '@/components/products/ProductFilter';
 import Breadcrumb from '@/components/common/Breadcrumb';
@@ -16,8 +17,11 @@ export default function SearchPage() {
   const page = parseInt(searchParams.get('page')) || 1;
   const sort = searchParams.get('sort') || 'newest';
   const categorySlug = searchParams.get('category') || '';
+  // Default to true for fuzzy search unless explicitly set to false
+  const fuzzySearch = searchParams.get('fuzzy') !== 'false';
 
   const [products, setProducts] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({
@@ -26,6 +30,7 @@ export default function SearchPage() {
     count: 0,
   });
   const [sortOption, setSortOption] = useState(sort);
+  const [useFuzzySearch, setUseFuzzySearch] = useState(fuzzySearch);
 
   // Filter states
   const [categories, setCategories] = useState([]);
@@ -51,6 +56,7 @@ export default function SearchPage() {
     const fetchProducts = async () => {
       if (!query) {
         setProducts([]);
+        setAllProducts([]);
         setLoading(false);
         return;
       }
@@ -59,42 +65,87 @@ export default function SearchPage() {
         setLoading(true);
         setError(null);
 
-        const params = {
-          page,
+        // Get all products with filters except keyword
+        const baseParams = {
+          page: 1,
           sort: sortOption,
-          keyword: query,
+          limit: 1000, // Get more products for better fuzzy search
         };
 
         // Add filter parameters
         if (selectedCategory) {
-          params.category = selectedCategory;
+          baseParams.category = selectedCategory;
         }
 
         if (priceRange.min) {
-          params.minPrice = priceRange.min;
+          baseParams.minPrice = priceRange.min;
         }
 
         if (priceRange.max) {
-          params.maxPrice = priceRange.max;
+          baseParams.maxPrice = priceRange.max;
         }
 
-        const data = await productAPI.getProducts(params);
-        setProducts(data.products);
+        // Get all products that match the filters
+        const allData = await productAPI.getProducts(baseParams);
+        setAllProducts(allData.products || []);
+
+        let filteredProducts = [];
+
+        // Apply fuzzy search if enabled
+        if (useFuzzySearch) {
+          // Configure Fuse with appropriate options
+          const fuse = new Fuse(allData.products || [], {
+            keys: ['name', 'hindiName', 'description', 'category.name'],
+            includeScore: true,
+            threshold: 0.6, // Higher threshold means more lenient matching (0-1)
+            distance: 100, // Allow more distance between characters
+            ignoreLocation: true, // Don't emphasize matches at the beginning
+          });
+
+          console.log('Performing fuzzy search for:', query);
+          const searchResults = fuse.search(query);
+          console.log('Fuzzy search results:', searchResults);
+
+          filteredProducts = searchResults.map(result => result.item);
+        } else {
+          // Simple search if fuzzy is disabled
+          const lowerQuery = query.toLowerCase();
+          filteredProducts = (allData.products || []).filter(product =>
+            (product.name || '').toLowerCase().includes(lowerQuery) ||
+            (product.hindiName || '').toLowerCase().includes(lowerQuery) ||
+            (product.description || '').toLowerCase().includes(lowerQuery) ||
+            (product.category?.name || '').toLowerCase().includes(lowerQuery)
+          );
+        }
+
+        console.log('Filtered products:', filteredProducts.length);
+
+        // Apply pagination to filtered products
+        const startIndex = (page - 1) * 12; // Assuming 12 products per page
+        const paginatedProducts = filteredProducts.slice(startIndex, startIndex + 12);
+
+        setProducts(paginatedProducts);
         setPagination({
-          page: data.page,
-          pages: data.pages,
-          count: data.count,
+          page: page,
+          pages: Math.ceil(filteredProducts.length / 12),
+          count: filteredProducts.length,
         });
       } catch (error) {
         setError(error.toString());
         console.error('Error fetching search results:', error);
+        setProducts([]);
+        setPagination({
+          page: 1,
+          pages: 1,
+          count: 0,
+        });
       } finally {
         setLoading(false);
       }
     };
 
     fetchProducts();
-  }, [query, page, sortOption, selectedCategory, priceRange]);
+  }, [query, page, sortOption, selectedCategory, priceRange, useFuzzySearch]);
 
   // Handle sort change
   const handleSortChange = (sort) => {
@@ -109,6 +160,11 @@ export default function SearchPage() {
   // Handle price range change
   const handlePriceRangeChange = (min, max) => {
     setPriceRange({ min, max });
+  };
+
+  // Handle fuzzy search toggle
+  const handleFuzzySearchToggle = () => {
+    setUseFuzzySearch(!useFuzzySearch);
   };
 
   // Build breadcrumb items
@@ -140,11 +196,40 @@ export default function SearchPage() {
       {query && (
         <div className="bg-gray-100 border-b border-gray-200 py-2">
           <div className="container mx-auto px-4">
-            <div className="flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <p className="text-gray-700">Search Results for: "{query}"</p>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+              <div className="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <p className="text-gray-700">Search Results for: "{query}"</p>
+              </div>
+
+              <div className="flex flex-col md:flex-row md:items-center gap-2">
+                {/* Smart Search Explanation */}
+                <div className="text-xs text-gray-600 bg-yellow-50 px-2 py-1 rounded border border-yellow-200 md:mr-2">
+                  <span className="font-medium">Tip:</span> Smart Search helps find products even with misspelled words
+                </div>
+
+                {/* Fuzzy Search Toggle */}
+                <div className="flex items-center bg-white px-3 py-1 rounded-full shadow-sm border border-gray-200">
+                  <label htmlFor="fuzzy-search" className="mr-2 text-sm font-medium text-gray-700">
+                    Smart Search
+                  </label>
+                  <div className="relative inline-block w-12 mr-1 align-middle select-none">
+                    <input
+                      type="checkbox"
+                      id="fuzzy-search"
+                      name="fuzzy-search"
+                      checked={useFuzzySearch}
+                      onChange={handleFuzzySearchToggle}
+                      className="sr-only"
+                    />
+                    <div className={`block w-12 h-6 rounded-full transition-colors ${useFuzzySearch ? 'bg-gradient-purple-pink' : 'bg-gray-300'}`}></div>
+                    <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform transform ${useFuzzySearch ? 'translate-x-6' : ''}`}></div>
+                  </div>
+                  <span className="text-xs text-gray-500 ml-1">{useFuzzySearch ? 'On' : 'Off'}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -255,10 +340,23 @@ export default function SearchPage() {
                 <h2 className="text-xl font-semibold text-gray-800 mb-2">
                   {query ? 'No products found' : 'Enter a search term to find products'}
                 </h2>
-                <p className="text-gray-600 mb-6">
+                <p className="text-gray-600 mb-3">
                   {query
-                    ? `We couldn't find any products matching "${query}". Try using different keywords or browse our categories.`
+                    ? `We couldn't find any products matching "${query}".`
                     : 'Use the search bar above to find products by name, description, or category.'}
+                </p>
+
+                {query && !useFuzzySearch && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-4 text-sm">
+                    <p className="font-medium text-yellow-800 mb-1">Try Smart Search</p>
+                    <p className="text-yellow-700">
+                      Enable Smart Search above to find products even with misspelled words or slight variations.
+                    </p>
+                  </div>
+                )}
+
+                <p className="text-gray-600 mb-6">
+                  {query ? 'Try using different keywords or browse our categories.' : ''}
                 </p>
                 <Link
                   href="/products"
@@ -281,7 +379,7 @@ export default function SearchPage() {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 md:gap-6">
                   {products.map((product) => (
                     <ProductCard key={product._id} product={product} />
                   ))}
@@ -294,7 +392,7 @@ export default function SearchPage() {
                       {/* Previous Page */}
                       {pagination.page > 1 && (
                         <Link
-                          href={`/search?q=${query}&page=${pagination.page - 1}&sort=${sortOption}${selectedCategory ? `&category=${selectedCategory}` : ''}${priceRange.min ? `&minPrice=${priceRange.min}` : ''}${priceRange.max ? `&maxPrice=${priceRange.max}` : ''}`}
+                          href={`/search?q=${query}&page=${pagination.page - 1}&sort=${sortOption}${selectedCategory ? `&category=${selectedCategory}` : ''}${priceRange.min ? `&minPrice=${priceRange.min}` : ''}${priceRange.max ? `&maxPrice=${priceRange.max}` : ''}&fuzzy=${useFuzzySearch}`}
                           className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                         >
                           Previous
@@ -313,7 +411,7 @@ export default function SearchPage() {
                           return (
                             <Link
                               key={pageNumber}
-                              href={`/search?q=${query}&page=${pageNumber}&sort=${sortOption}${selectedCategory ? `&category=${selectedCategory}` : ''}${priceRange.min ? `&minPrice=${priceRange.min}` : ''}${priceRange.max ? `&maxPrice=${priceRange.max}` : ''}`}
+                              href={`/search?q=${query}&page=${pageNumber}&sort=${sortOption}${selectedCategory ? `&category=${selectedCategory}` : ''}${priceRange.min ? `&minPrice=${priceRange.min}` : ''}${priceRange.max ? `&maxPrice=${priceRange.max}` : ''}&fuzzy=${useFuzzySearch}`}
                               className={`px-4 py-2 border ${
                                 pageNumber === pagination.page
                                   ? 'bg-gradient-purple-pink text-white border-primary'
@@ -346,7 +444,7 @@ export default function SearchPage() {
                       {/* Next Page */}
                       {pagination.page < pagination.pages && (
                         <Link
-                          href={`/search?q=${query}&page=${pagination.page + 1}&sort=${sortOption}${selectedCategory ? `&category=${selectedCategory}` : ''}${priceRange.min ? `&minPrice=${priceRange.min}` : ''}${priceRange.max ? `&maxPrice=${priceRange.max}` : ''}`}
+                          href={`/search?q=${query}&page=${pagination.page + 1}&sort=${sortOption}${selectedCategory ? `&category=${selectedCategory}` : ''}${priceRange.min ? `&minPrice=${priceRange.min}` : ''}${priceRange.max ? `&maxPrice=${priceRange.max}` : ''}&fuzzy=${useFuzzySearch}`}
                           className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                         >
                           Next

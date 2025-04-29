@@ -72,6 +72,10 @@ export const productAPI = {
   // Get all products with filters
   getProducts: async (params = {}) => {
     try {
+      // If fuzzy search is enabled, add it to the params
+      if (params.fuzzy !== undefined) {
+        params.fuzzy = params.fuzzy.toString();
+      }
       const { data } = await api.get('/products', { params });
       return data;
     } catch (error) {
