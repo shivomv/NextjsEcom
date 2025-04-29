@@ -196,7 +196,7 @@ export default function BlogPage() {
             </svg>
             <h2 className="text-2xl font-bold text-primary mb-4">No Blog Posts Found</h2>
             <p className="text-text-light max-w-2xl mx-auto mb-8">
-              We're working on creating valuable content about spirituality, traditional practices, and cultural heritage.
+              We&apos;re working on creating valuable content about spirituality, traditional practices, and cultural heritage.
               Check back soon for articles, guides, and insights.
             </p>
             <Link

@@ -201,7 +201,7 @@ export default function SearchPage() {
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
-                <p className="text-gray-700">Search Results for: "{query}"</p>
+                <p className="text-gray-700">Search Results for: &quot;{query}&quot;</p>
               </div>
 
               <div className="flex flex-col md:flex-row md:items-center gap-2">
@@ -342,7 +342,7 @@ export default function SearchPage() {
                 </h2>
                 <p className="text-gray-600 mb-3">
                   {query
-                    ? `We couldn't find any products matching "${query}".`
+                    ? `We couldn&apos;t find any products matching &quot;${query}&quot;.`
                     : 'Use the search bar above to find products by name, description, or category.'}
                 </p>
 
