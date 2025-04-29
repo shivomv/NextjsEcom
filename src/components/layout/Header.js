@@ -2,35 +2,47 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { useCategories } from '@/context/CategoryContext';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [mobileCategoryOpen, setMobileCategoryOpen] = useState(false);
   const [mobileFeaturedOpen, setMobileFeaturedOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [mobileSearchVisible, setMobileSearchVisible] = useState(false);
   const { user, logout, isAuthenticated, isAdmin } = useAuth();
   const { cartItems } = useCart();
   const { categories, parentCategories, festivalCategories, loading: categoriesLoading } = useCategories();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
-    if (isProfileOpen) setIsProfileOpen(false);
-    if (isSearchOpen) setIsSearchOpen(false);
-  };
-
-  const toggleSearch = () => {
-    setIsSearchOpen(!isSearchOpen);
     if (isProfileOpen) setIsProfileOpen(false);
   };
 
   const toggleProfile = () => {
     setIsProfileOpen(!isProfileOpen);
-    if (isSearchOpen) setIsSearchOpen(false);
     if (isMenuOpen) setIsMenuOpen(false);
+  };
+
+  // Toggle mobile search bar visibility
+  const toggleMobileSearch = () => {
+    setMobileSearchVisible(!mobileSearchVisible);
+  };
+
+  // Handle search form submission
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setMobileSearchVisible(false);
+    }
   };
 
   // Close dropdown when clicking outside
@@ -92,8 +104,8 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Main header with logo, navigation, search and cart */}
-      <div className="container mx-auto px-4 py-3 relative bg-white">
+      {/* Main header with logo, search, cart and account */}
+      <div className="container mx-auto px-2 sm:px-4 py-3 relative bg-white">
         {/* Traditional decorative elements */}
         <div className="absolute left-0 top-0 w-16 h-16 opacity-10 hidden md:block">
           <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -108,36 +120,177 @@ export default function Header() {
         <div className="flex justify-between items-center relative z-10">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <Link href="/" className="flex items-center group">
+            <Link href="/" className="flex items-center">
               <div className="flex flex-col items-center md:items-start">
                 <div className="relative">
                   <span className="text-xl md:text-2xl font-bold text-gradient-full font-brand relative z-10">प्रशासक समिति</span>
-                  <div className="absolute -bottom-1 left-0 w-full h-2 bg-gradient-pink-orange -skew-x-12 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
                 </div>
                 <span className="text-xs text-text-light hidden md:block font-hindi">एकात्मीता सोशल वेलफेयर सोसायटी</span>
               </div>
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-4">
-            <Link href="/" className="text-text hover:text-primary transition-colors font-medium flex items-center px-3 py-2 relative group">
-              <span className="mr-1.5">🏠</span> Home
-              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-pink-orange transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
+          {/* Search Bar */}
+          <div className="hidden md:block flex-grow mx-4 lg:mx-8 max-w-2xl search">
+            <form onSubmit={handleSearch} className="flex items-center">
+              <div className="relative flex-grow">
+                <input
+                  type="text"
+                  placeholder="Search for products..."
+                  className="w-full px-4 h-10 rounded-l-md focus:outline-none text-text text-base border-2 border-r-0 border-primary/20 focus:border-primary/40"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <button
+                type="submit"
+                className="bg-gradient-purple-pink text-white px-4 h-10 rounded-r-md rounded-l-none hover:opacity-90 transition-opacity font-medium flex items-center justify-center min-w-[48px]"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
+            </form>
+          </div>
+
+          {/* Cart, Account Icons */}
+          <div className="flex items-center space-x-4">
+            {/* Mobile search button */}
+            <button
+              onClick={toggleMobileSearch}
+              className="md:hidden text-text hover:text-primary transition-colors p-2 rounded-full hover:bg-secondary/10 relative"
+              aria-label="Search"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
+
+            <Link href="/cart" className="hidden sm:block text-text hover:text-primary transition-colors relative p-2 rounded-full hover:bg-secondary/10" aria-label="Cart">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              <span className="absolute top-0 right-0 bg-gradient-pink-orange text-white text-xs rounded-full h-5 w-5 flex items-center justify-center transform translate-x-1/4 -translate-y-1/4 transition-opacity duration-300">
+                {cartItems.length}
+              </span>
             </Link>
-            <Link href="/products" className="text-text hover:text-primary transition-colors font-medium flex items-center px-3 py-2 relative group">
+
+            {isAuthenticated ? (
+              <div className="relative hidden sm:block profile-dropdown">
+                <button
+                  onClick={toggleProfile}
+                  className="text-text hover:text-primary transition-colors flex items-center p-2 rounded-full hover:bg-secondary/10 relative"
+                  aria-label="Account"
+                  aria-expanded={isProfileOpen}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  <span className={`absolute -bottom-1 -right-1 w-3 h-3 bg-gradient-pink-orange rounded-full ${isProfileOpen ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}></span>
+                </button>
+                {isProfileOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 profile-dropdown-menu">
+                    <div className="px-4 py-2 border-b border-gray-100">
+                      <p className="text-sm font-medium">Hello, {user?.name}</p>
+                      <p className="text-xs text-gray-500">{user?.email}</p>
+                    </div>
+                    <Link href="/account" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                      My Account
+                    </Link>
+                    <Link href="/account/orders" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                      My Orders
+                    </Link>
+                    {isAdmin && (
+                      <Link href="/admin/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        Admin Dashboard
+                      </Link>
+                    )}
+                    <button
+                      onClick={logout}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link href={`/login?redirect=${typeof window !== 'undefined' ? window.location.pathname : '/'}`} className="text-text hover:text-primary transition-colors hidden sm:flex items-center p-2 rounded-full hover:bg-secondary/10 relative" aria-label="Account">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </Link>
+            )}
+
+            {/* Mobile menu button */}
+            <button
+              onClick={toggleMenu}
+              className="md:hidden text-text hover:text-primary transition-colors p-2 rounded-full hover:bg-secondary/10 relative"
+              aria-label="Menu"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Search Bar */}
+      {mobileSearchVisible && (
+        <div className="md:hidden border-t border-primary/20 bg-white z-40 shadow-sm">
+          <div className="container mx-auto px-4 py-2">
+            <form onSubmit={handleSearch} className="flex items-center">
+              <div className="relative flex-grow">
+                <input
+                  type="text"
+                  placeholder="Search for products..."
+                  className="w-full px-4 h-10 rounded-l-md focus:outline-none text-text text-base border-2 border-r-0 border-primary/20 focus:border-primary/40"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <button
+                type="submit"
+                className="bg-gradient-purple-pink text-white px-4 h-10 rounded-r-md rounded-l-none hover:opacity-90 transition-opacity font-medium flex items-center justify-center min-w-[48px]"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Sub-header with navigation links */}
+      <div className="border-t border-primary/20 bg-white hidden md:block z-40 shadow-sm">
+        <div className="container mx-auto px-4">
+          <nav className="flex justify-center space-x-6 py-2">
+            <Link
+              href="/"
+              className={`text-${pathname === '/' ? 'primary' : 'text'} hover:text-primary transition-colors font-medium flex items-center px-3 py-2 relative group`}
+            >
+              <span className="mr-1.5">🏠</span> Home
+              <span className={`absolute bottom-0 left-0 w-full h-0.5 bg-gradient-pink-orange ${pathname === '/' ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'} transition-transform duration-300 origin-left`}></span>
+            </Link>
+            <Link
+              href="/products"
+              className={`text-${pathname === '/products' ? 'primary' : 'text'} hover:text-primary transition-colors font-medium flex items-center px-3 py-2 relative group`}
+            >
               <span className="mr-1.5">🛍️</span> All Products
-              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-pink-orange transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
+              <span className={`absolute bottom-0 left-0 w-full h-0.5 bg-gradient-pink-orange ${pathname === '/products' ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'} transition-transform duration-300 origin-left`}></span>
             </Link>
 
             {/* Categories Dropdown */}
             <div className="relative group">
-              <button className="text-text hover:text-primary transition-colors font-medium flex items-center px-3 py-2 relative">
+              <button className={`text-${pathname.startsWith('/category') ? 'primary' : 'text'} hover:text-primary transition-colors font-medium flex items-center px-3 py-2 relative group`}>
                 <span className="mr-1.5">📦</span> Categories
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
-                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-pink-orange transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
+                <span className={`absolute bottom-0 left-0 w-full h-0.5 bg-gradient-pink-orange ${pathname.startsWith('/category') ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'} transition-transform duration-300 origin-left`}></span>
               </button>
               <div className="absolute left-0 mt-0 w-56 bg-white rounded-md shadow-lg overflow-hidden z-20 transform opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 origin-top-left hidden group-hover:block">
                 <div className="py-2">
@@ -159,12 +312,12 @@ export default function Header() {
 
             {/* Featured Products Dropdown */}
             <div className="relative group">
-              <button className="text-text hover:text-primary transition-colors font-medium flex items-center px-3 py-2 relative">
+              <button className={`text-${pathname.includes('featured=true') || pathname.includes('sort=') ? 'primary' : 'text'} hover:text-primary transition-colors font-medium flex items-center px-3 py-2 relative group`}>
                 <span className="mr-1.5">⭐</span> Featured
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
-                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-pink-orange transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
+                <span className={`absolute bottom-0 left-0 w-full h-0.5 bg-gradient-pink-orange ${pathname.includes('featured=true') || pathname.includes('sort=') ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'} transition-transform duration-300 origin-left`}></span>
               </button>
               <div className="absolute left-0 mt-0 w-56 bg-white rounded-md shadow-lg overflow-hidden z-20 transform opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 origin-top-left hidden group-hover:block">
                 <div className="py-2">
@@ -196,151 +349,36 @@ export default function Header() {
               </div>
             </div>
 
-            <Link href="/about" className="text-text hover:text-primary transition-colors font-medium flex items-center px-3 py-2 relative group">
+            <Link
+              href="/about"
+              className={`text-${pathname === '/about' ? 'primary' : 'text'} hover:text-primary transition-colors font-medium flex items-center px-3 py-2 relative group`}
+            >
               <span className="mr-1.5">🚩</span> About Us
-              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-pink-orange transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
+              <span className={`absolute bottom-0 left-0 w-full h-0.5 bg-gradient-pink-orange ${pathname === '/about' ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'} transition-transform duration-300 origin-left`}></span>
+            </Link>
+
+            <Link
+              href="/blog"
+              className={`text-${pathname === '/blog' || pathname.startsWith('/blog/') ? 'primary' : 'text'} hover:text-primary transition-colors font-medium flex items-center px-3 py-2 relative group`}
+            >
+              <span className="mr-1.5">📝</span> Blog
+              <span className={`absolute bottom-0 left-0 w-full h-0.5 bg-gradient-pink-orange ${pathname === '/blog' || pathname.startsWith('/blog/') ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'} transition-transform duration-300 origin-left`}></span>
+            </Link>
+
+            <Link
+              href="/contact"
+              className={`text-${pathname === '/contact' ? 'primary' : 'text'} hover:text-primary transition-colors font-medium flex items-center px-3 py-2 relative group`}
+            >
+              <span className="mr-1.5">📞</span> Contact
+              <span className={`absolute bottom-0 left-0 w-full h-0.5 bg-gradient-pink-orange ${pathname === '/contact' ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'} transition-transform duration-300 origin-left`}></span>
             </Link>
           </nav>
-
-          {/* Search, Cart, Account Icons */}
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={toggleSearch}
-              className="text-text hover:text-primary transition-colors p-2 rounded-full hover:bg-secondary/10 relative group"
-              aria-label="Search"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <span className="absolute -bottom-1 -right-1 w-3 h-3 bg-gradient-pink-orange rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-            </button>
-
-            <Link href="/cart" className="hidden sm:block text-text hover:text-primary transition-colors relative p-2 rounded-full hover:bg-secondary/10 group" aria-label="Cart">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-              <span className="absolute top-0 right-0 bg-gradient-pink-orange text-white text-xs rounded-full h-5 w-5 flex items-center justify-center transform translate-x-1/4 -translate-y-1/4 group-hover:opacity-90 transition-opacity duration-300">
-                {cartItems.length}
-              </span>
-              <span className="absolute -bottom-1 -right-1 w-3 h-3 bg-gradient-pink-orange rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-            </Link>
-
-            {isAuthenticated ? (
-              <div className="relative hidden sm:block profile-dropdown">
-                <button
-                  onClick={toggleProfile}
-                  className="text-text hover:text-primary transition-colors flex items-center p-2 rounded-full hover:bg-secondary/10 relative group"
-                  aria-label="Account"
-                  aria-expanded={isProfileOpen}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  <span className={`absolute -bottom-1 -right-1 w-3 h-3 bg-gradient-pink-orange rounded-full ${isProfileOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity duration-300`}></span>
-                </button>
-                {isProfileOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 profile-dropdown-menu">
-                    <div className="px-4 py-2 border-b border-gray-100">
-                      <p className="text-sm font-medium">Hello, {user?.name}</p>
-                      <p className="text-xs text-gray-500">{user?.email}</p>
-                    </div>
-                    <Link href="/account" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                      My Account
-                    </Link>
-                    <Link href="/account/orders" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                      My Orders
-                    </Link>
-                    {isAdmin && (
-                      <Link href="/admin/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                        Admin Dashboard
-                      </Link>
-                    )}
-                    <button
-                      onClick={logout}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <Link href={`/login?redirect=${typeof window !== 'undefined' ? window.location.pathname : '/'}`} className="text-text hover:text-primary transition-colors hidden sm:flex items-center p-2 rounded-full hover:bg-secondary/10 relative group" aria-label="Account">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                <span className="absolute -bottom-1 -right-1 w-3 h-3 bg-gradient-pink-orange rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-              </Link>
-            )}
-
-            {/* Mobile menu button */}
-            <button
-              onClick={toggleMenu}
-              className="md:hidden text-text hover:text-primary transition-colors p-2 rounded-full hover:bg-secondary/10 relative group"
-              aria-label="Menu"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-              <span className="absolute -bottom-1 -right-1 w-3 h-3 bg-gradient-pink-orange rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-            </button>
-          </div>
         </div>
       </div>
 
-      {/* Search Bar (conditionally rendered) */}
-      {isSearchOpen && (
-        <div className="border-t border-primary/20 py-4 px-4 bg-white fixed top-[60px] left-0 right-0 z-50 shadow-lg">
-          <div className="container mx-auto">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="font-medium text-lg text-text flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                Search Products
-              </h3>
-              <button
-                onClick={toggleSearch}
-                className="p-2 text-text hover:text-primary transition-colors rounded-full hover:bg-secondary/10"
-                aria-label="Close search"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <form className="flex items-center">
-              <input
-                type="text"
-                placeholder="Search for products..."
-                className="w-full px-4 py-3 rounded-l-md focus:outline-none text-text text-base border-2 border-primary/20 focus:border-primary/40"
-                autoFocus
-              />
-              <button
-                type="submit"
-                className="bg-gradient-purple-pink text-white px-4 py-3 rounded-r-md hover:opacity-90 transition-opacity font-medium"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </button>
-            </form>
-            <div className="mt-4">
-              <p className="text-sm text-text-muted mb-2 font-medium">Popular Searches:</p>
-              <div className="flex flex-wrap gap-2">
-                <button className="bg-secondary/10 hover:bg-secondary/20 text-text px-3 py-1.5 rounded-full text-sm transition-colors border border-secondary/20">Puja Items</button>
-                <button className="bg-secondary/10 hover:bg-secondary/20 text-text px-3 py-1.5 rounded-full text-sm transition-colors border border-secondary/20">Ganesh Idols</button>
-                <button className="bg-secondary/10 hover:bg-secondary/20 text-text px-3 py-1.5 rounded-full text-sm transition-colors border border-secondary/20">Cow Dung Products</button>
-                <button className="bg-secondary/10 hover:bg-secondary/20 text-text px-3 py-1.5 rounded-full text-sm transition-colors border border-secondary/20">Diwali Items</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Mobile Menu (conditionally rendered) */}
       {isMenuOpen && (
-        <div className="md:hidden border-t border-primary/20 bg-white fixed top-[60px] left-0 right-0 z-50 max-h-[calc(100vh-60px)] overflow-y-auto shadow-lg">
+        <div className="md:hidden border-t border-primary/20 bg-white fixed top-[120px] left-0 right-0 z-40 max-h-[calc(100vh-120px)] overflow-y-auto shadow-lg">
           <div className="flex justify-between items-center px-4 py-3 border-b border-primary/20">
             <h3 className="font-medium text-lg text-text flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -358,6 +396,9 @@ export default function Header() {
               </svg>
             </button>
           </div>
+
+
+
           <nav className="flex flex-col px-4 py-2">
             <Link href="/" className="py-4 text-text hover:text-primary transition-colors text-lg border-b border-gray-100 flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -456,6 +497,20 @@ export default function Header() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               About Us
+            </Link>
+
+            <Link href="/blog" className="py-4 text-text hover:text-primary transition-colors text-lg border-b border-gray-100 flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+              </svg>
+              Blog
+            </Link>
+
+            <Link href="/contact" className="py-4 text-text hover:text-primary transition-colors text-lg border-b border-gray-100 flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              Contact
             </Link>
             {isAuthenticated ? (
               <>

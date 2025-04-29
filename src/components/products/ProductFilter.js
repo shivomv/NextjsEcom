@@ -48,10 +48,10 @@ export default function ProductFilter({
   return (
     <>
       <div className="md:hidden">
-        <div className="flex gap-2 items-center m-1">
+        <div className="flex gap-1 items-center">
           <button
             onClick={toggleFilter}
-            className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded border border-gray-300 hover:bg-gray-50 text-primary"
+            className="inline-flex items-center px-2 py-1 text-xs font-medium rounded border border-gray-300 hover:bg-gray-50 text-primary"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clipRule="evenodd" />
@@ -60,7 +60,7 @@ export default function ProductFilter({
           </button>
           <button
             onClick={toggleSort}
-            className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded border border-gray-300 hover:bg-gray-50 text-primary"
+            className="inline-flex items-center px-2 py-1 text-xs font-medium rounded border border-gray-300 hover:bg-gray-50 text-primary"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
               <path d="M5 4a1 1 0 00-2 0v7.268a2 2 0 000 3.464V16a1 1 0 102 0v-1.268a2 2 0 000-3.464V4zM11 4a1 1 0 10-2 0v1.268a2 2 0 000 3.464V16a1 1 0 102 0V8.732a2 2 0 000-3.464V4zM16 3a1 1 0 011 1v7.268a2 2 0 010 3.464V16a1 1 0 11-2 0v-1.268a2 2 0 010-3.464V4a1 1 0 011-1z" />
@@ -70,7 +70,7 @@ export default function ProductFilter({
         </div>
 
         {/* Sort dropdown for mobile */}
-        <div className={`${isSortOpen ? 'block' : 'hidden'} bg-white p-3  shadow-md rounded-md border border-gray-200 w-full`}>
+        <div className={`${isSortOpen ? 'block' : 'hidden'} bg-white p-2 shadow-md rounded-md border border-gray-200 w-full`}>
           <div className="mb-2 font-medium text-gray-700">Sort By:</div>
           <div className="space-y-2">
             <button
@@ -101,10 +101,10 @@ export default function ProductFilter({
         </div>
 
         {/* Filter dropdown for mobile */}
-        <div className={`${isFilterOpen ? 'block' : 'hidden'} bg-white p-3 mt-1 shadow-md rounded-md border border-gray-200 w-full`}>
+        <div className={`${isFilterOpen ? 'block' : 'hidden'} bg-white p-2 mt-1 shadow-md rounded-md border border-gray-200 w-full`}>
           {/* Categories */}
-          <div className="mb-6">
-            <h3 className="text-md font-bold mb-3">Categories</h3>
+          <div className="mb-4">
+            <h3 className="text-sm font-bold mb-2">Categories</h3>
             <ul className="space-y-2">
               {parentCategories.map((category) => (
                 <li key={category._id}>
@@ -150,8 +150,8 @@ export default function ProductFilter({
           </div>
 
           {/* Price Range */}
-          <div className="mb-6">
-            <h3 className="text-md font-bold mb-3">Price Range</h3>
+          <div className="mb-4">
+            <h3 className="text-sm font-bold mb-2">Price Range</h3>
             <form onSubmit={handlePriceSubmit} className="space-y-3">
               <div className="flex items-center space-x-2">
                 <div className="w-1/2">
@@ -193,8 +193,8 @@ export default function ProductFilter({
           </div>
 
           {/* Availability */}
-          <div className="mb-6">
-            <h3 className="text-md font-bold mb-3">Availability</h3>
+          <div className="mb-4">
+            <h3 className="text-sm font-bold mb-2">Availability</h3>
             <div className="space-y-2">
               <label className="flex items-center">
                 <input
@@ -214,8 +214,8 @@ export default function ProductFilter({
           </div>
 
           {/* Festival Related */}
-          <div className="mb-6">
-            <h3 className="text-md font-bold mb-3">Festival</h3>
+          <div className="mb-4">
+            <h3 className="text-sm font-bold mb-2">Festival</h3>
             <div className="space-y-2">
               <label className="flex items-center">
                 <input
@@ -256,7 +256,7 @@ export default function ProductFilter({
       </div>
 
       {/* Desktop filters - always visible on md and up */}
-      <div className="hidden md:block bg-white p-2 m-1 shadow-md rounded-md border border-gray-200">
+      <div className="hidden md:block bg-white p-2 shadow-md rounded-md border border-gray-200">
         {/* Categories */}
         <div className="mb-6">
           <h3 className="text-md font-bold mb-3">Categories</h3>

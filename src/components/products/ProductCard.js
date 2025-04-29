@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import ImageWithFallback from '@/components/common/ImageWithFallback';
 import { useCart } from '@/context/CartContext';
 
@@ -10,20 +9,46 @@ export default function ProductCard({ product }) {
   const { addToCart } = useCart();
   const [isAddingToCart, setIsAddingToCart] = useState(false);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async (e) => {
+    if (e) e.preventDefault();
+
     // Prevent adding out-of-stock items (stock is undefined, null, 0, or negative)
     if (product.stock === undefined || product.stock === null || product.stock <= 0) {
       console.error('Cannot add out-of-stock product to cart:', product.name);
+
+      // Show toast notification if available
+      if (typeof window !== 'undefined' && window.toast) {
+        window.toast.error('This product is out of stock and cannot be added to your cart.');
+      }
+
       return;
     }
 
     setIsAddingToCart(true);
-    const success = addToCart(product, 1);
+    try {
+      const success = await addToCart(product, 1);
 
-    // Reset button state after animation
-    setTimeout(() => {
-      setIsAddingToCart(false);
-    }, success ? 1000 : 300); // Shorter animation if failed
+      // Show success message if available
+      if (success && typeof window !== 'undefined' && window.toast) {
+        window.toast.success(`${product.name} added to cart`);
+      }
+
+      return success;
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+
+      // Show error message if available
+      if (typeof window !== 'undefined' && window.toast) {
+        window.toast.error('Failed to add product to cart');
+      }
+
+      return false;
+    } finally {
+      // Reset button state after a short delay
+      setTimeout(() => {
+        setIsAddingToCart(false);
+      }, 500);
+    }
   };
 
   // Format price with Indian Rupee symbol

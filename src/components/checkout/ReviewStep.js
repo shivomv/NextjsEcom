@@ -42,10 +42,18 @@ export default function ReviewStep({
     });
   };
 
+  // Check if any items are out of stock
+  const hasOutOfStockItems = cartItems.some(item => item.stock <= 0);
+
   // Handle place order button click
   const handlePlaceOrder = () => {
     if (!termsAccepted) {
       setTermsError('You must accept the terms and conditions to place an order');
+      return;
+    }
+
+    if (hasOutOfStockItems) {
+      setTermsError('Your order contains out-of-stock items. Please remove them before proceeding.');
       return;
     }
 
@@ -82,6 +90,25 @@ export default function ReviewStep({
   return (
     <div className="p-6">
       <h2 className="text-xl font-semibold mb-6">Review Your Order</h2>
+
+      {/* Out of stock warning banner */}
+      {hasOutOfStockItems && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">Out of Stock Items in Your Order</h3>
+              <div className="mt-2 text-sm text-red-700">
+                <p>Your order contains items that are currently out of stock. Please remove these items from your cart before placing your order.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Shipping Address */}
       <div className="mb-6">
@@ -122,15 +149,38 @@ export default function ReviewStep({
                     sizes="64px"
                     className="object-cover"
                   />
+
+                  {/* Out of stock overlay */}
+                  {item.stock <= 0 && (
+                    <div className="absolute inset-0 bg-red-500 bg-opacity-30 flex items-center justify-center">
+                      <span className="bg-red-600 text-white text-xs px-1 py-0.5 rounded transform rotate-45">
+                        OUT OF STOCK
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <div className="ml-4 flex-1">
-                  <h4 className="font-medium">{item.name}</h4>
+                  <div className="flex items-center">
+                    <h4 className="font-medium">{item.name}</h4>
+                    {item.stock <= 0 && (
+                      <span className="ml-2 bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full">
+                        Out of Stock
+                      </span>
+                    )}
+                  </div>
                   {item.hindiName && item.hindiName !== item.name && (
                     <p className="text-sm text-gray-600">{item.hindiName}</p>
                   )}
                   <p className="text-sm text-gray-600">
                     {formatPrice(item.price)} × {item.qty}
                   </p>
+
+                  {/* Stock warning */}
+                  {item.stock <= 0 && (
+                    <p className="text-xs text-red-600 mt-1">
+                      This item is out of stock and cannot be fulfilled
+                    </p>
+                  )}
                 </div>
                 <div className="ml-4 font-medium">
                   {formatPrice(item.price * item.qty)}
@@ -255,24 +305,38 @@ export default function ReviewStep({
           Back to Payment
         </button>
 
-        <button
-          type="button"
-          onClick={handlePlaceOrder}
-          className="bg-primary text-white px-6 py-3 rounded-md hover:bg-primary-dark transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 flex items-center"
-          disabled={loading}
-        >
-          {loading ? (
-            <>
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Processing...
-            </>
-          ) : (
-            'Place Order'
-          )}
-        </button>
+        {hasOutOfStockItems ? (
+          <button
+            type="button"
+            onClick={() => setTermsError('Your order contains out-of-stock items. Please remove them before proceeding.')}
+            className="bg-gray-300 text-gray-600 px-6 py-3 rounded-md cursor-not-allowed focus:outline-none flex items-center"
+            disabled={true}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            Cannot Place Order
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={handlePlaceOrder}
+            className="bg-primary text-white px-6 py-3 rounded-md hover:bg-primary-dark transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 flex items-center"
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Processing...
+              </>
+            ) : (
+              'Place Order'
+            )}
+          </button>
+        )}
       </div>
     </div>
   );

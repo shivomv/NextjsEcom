@@ -77,14 +77,20 @@ export default function ProductDetailPage() {
   };
 
   const handleAddToCart = () => {
-    if (product && quantity > 0) {
+    // Prevent adding out-of-stock items (stock is undefined, null, 0, or negative)
+    if (!product || product.stock === undefined || product.stock === null || product.stock <= 0) {
+      console.error('Cannot add out-of-stock product to cart:', product?.name);
+      return;
+    }
+
+    if (quantity > 0) {
       setIsAddingToCart(true);
-      addToCart(product, quantity);
+      const success = addToCart(product, quantity);
 
       // Reset button state after animation
       setTimeout(() => {
         setIsAddingToCart(false);
-      }, 1000);
+      }, success ? 1000 : 300); // Shorter animation if failed
     }
   };
 

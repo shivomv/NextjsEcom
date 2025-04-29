@@ -4,7 +4,10 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ImageWithFallback from '@/components/common/ImageWithFallback';
 import { useCategories } from '@/context/CategoryContext';
+import Breadcrumb from '@/components/common/Breadcrumb';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import LoadMore from '@/components/common/LoadMore';
+import ProductCard from '@/components/products/ProductCard';
 
 // This is a dynamic page that will display products based on the category slug
 export default function CategoryPage({ params }) {
@@ -13,9 +16,12 @@ export default function CategoryPage({ params }) {
   const [category, setCategory] = useState(null);
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState([]);
+  const [displayedProducts, setDisplayedProducts] = useState([]);
   const [activeFilter, setActiveFilter] = useState('all');
   const [activeSortOption, setActiveSortOption] = useState('popularity');
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [limit, setLimit] = useState(10);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -38,6 +44,7 @@ export default function CategoryPage({ params }) {
 
       // Get category from context
       const categoryData = getCategoryBySlug(slug);
+      console.log('Category data from context:', categoryData);
 
       if (categoryData) {
         setCategory(categoryData);
@@ -45,21 +52,51 @@ export default function CategoryPage({ params }) {
         // Fetch products for this category
         try {
           console.log(`Fetching products for category: ${slug} (ID: ${categoryData._id})`);
-          // Use the category ID instead of slug for more reliable filtering
-          const response = await fetch(`/api/products?category=${categoryData._id}`);
-          if (response.ok) {
-            const data = await response.json();
-            console.log('Products API response:', data);
-            // The API returns an object with a products array
+
+          // Try fetching with both the ID and the slug to see which one works
+          const responseWithId = await fetch(`/api/products?category=${categoryData._id}`);
+          console.log('Response with ID status:', responseWithId.status);
+
+          const responseWithSlug = await fetch(`/api/products?category=${slug}`);
+          console.log('Response with slug status:', responseWithSlug.status);
+
+          // Use the ID response if it's OK, otherwise try the slug response
+          if (responseWithId.ok) {
+            const data = await responseWithId.json();
+            console.log('Products API response with ID:', data);
+            setProducts(data.products || []);
+          } else if (responseWithSlug.ok) {
+            const data = await responseWithSlug.json();
+            console.log('Products API response with slug:', data);
             setProducts(data.products || []);
           } else {
-            console.error('Failed to fetch products:', response.status);
-            setProducts([]);
+            console.error('Failed to fetch products with both ID and slug');
+
+            // Try a direct fetch to see all products
+            const allProductsResponse = await fetch('/api/products');
+            if (allProductsResponse.ok) {
+              const allData = await allProductsResponse.json();
+              console.log('All products:', allData);
+              console.log('Looking for products with category ID:', categoryData._id);
+
+              // Filter products manually to see if any match
+              const matchingProducts = allData.products.filter(
+                product => product.category === categoryData._id ||
+                          (product.category && product.category._id === categoryData._id)
+              );
+              console.log('Manually filtered products:', matchingProducts);
+
+              setProducts(matchingProducts || []);
+            } else {
+              setProducts([]);
+            }
           }
         } catch (error) {
           console.error('Error fetching products:', error);
           setProducts([]);
         }
+      } else {
+        console.error('Category not found for slug:', slug);
       }
 
       setLoading(false);
@@ -82,7 +119,49 @@ export default function CategoryPage({ params }) {
 
   // Use real category data or fallback to default
   const displayCategory = category || defaultCategory;
-  const displayProducts = products;
+
+  // Filter and sort products
+  const filterAndSortProducts = () => {
+    let filteredProducts = [...products];
+
+    // Apply filter
+    if (activeFilter === 'new') {
+      // Sort by date and take the newest 20%
+      filteredProducts = filteredProducts
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+        .slice(0, Math.max(1, Math.floor(filteredProducts.length * 0.2)));
+    } else if (activeFilter === 'best-sellers') {
+      // Sort by sales count (if available) or rating
+      filteredProducts = filteredProducts
+        .sort((a, b) => (b.salesCount || b.rating || 0) - (a.salesCount || a.rating || 0))
+        .slice(0, Math.max(1, Math.floor(filteredProducts.length * 0.3)));
+    } else if (activeFilter === 'featured') {
+      // Filter to only featured products
+      filteredProducts = filteredProducts.filter(p => p.featured);
+    }
+
+    // Apply sorting
+    if (activeSortOption === 'price-asc') {
+      filteredProducts.sort((a, b) => (a.price || 0) - (b.price || 0));
+    } else if (activeSortOption === 'price-desc') {
+      filteredProducts.sort((a, b) => (b.price || 0) - (a.price || 0));
+    } else if (activeSortOption === 'newest') {
+      filteredProducts.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    } else if (activeSortOption === 'rating') {
+      filteredProducts.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    } else {
+      // Default: popularity (based on views or sales)
+      filteredProducts.sort((a, b) => (b.views || b.salesCount || 0) - (a.views || a.salesCount || 0));
+    }
+
+    return filteredProducts;
+  };
+
+  // Update displayed products when products, filters, or limit changes
+  useEffect(() => {
+    const filteredAndSortedProducts = filterAndSortProducts();
+    setDisplayedProducts(filteredAndSortedProducts.slice(0, limit));
+  }, [products, activeFilter, activeSortOption, limit]);
 
   // Show loading state
   if (loading || categoriesLoading) {
@@ -95,6 +174,19 @@ export default function CategoryPage({ params }) {
 
   return (
     <div className="bg-background min-h-screen">
+      {/* Breadcrumb */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="container mx-auto px-4 py-2">
+          <Breadcrumb items={[
+            { label: 'Home', href: '/' },
+            { label: 'Categories', href: '/category' },
+            { label: displayCategory.name, href: `/category/${slug}`, active: true }
+          ]} />
+        </div>
+      </div>
+
+
+
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-purple-900/80 to-pink-800/80 z-10"></div>
@@ -124,7 +216,10 @@ export default function CategoryPage({ params }) {
           {/* Desktop View */}
           <div className="hidden md:flex flex-wrap gap-2">
             <button
-              onClick={() => setActiveFilter('all')}
+              onClick={() => {
+                setActiveFilter('all');
+                setLimit(10);
+              }}
               className={`px-4 py-2 rounded-full ${activeFilter === 'all' ? 'bg-gradient-purple-pink text-white' : 'bg-white text-text hover:bg-gray-100'} transition-colors font-medium flex items-center`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -133,7 +228,10 @@ export default function CategoryPage({ params }) {
               All Products
             </button>
             <button
-              onClick={() => setActiveFilter('new')}
+              onClick={() => {
+                setActiveFilter('new');
+                setLimit(10);
+              }}
               className={`px-4 py-2 rounded-full ${activeFilter === 'new' ? 'bg-gradient-purple-pink text-white' : 'bg-white text-text hover:bg-gray-100'} transition-colors font-medium flex items-center`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -142,7 +240,10 @@ export default function CategoryPage({ params }) {
               New Arrivals
             </button>
             <button
-              onClick={() => setActiveFilter('best-sellers')}
+              onClick={() => {
+                setActiveFilter('best-sellers');
+                setLimit(10);
+              }}
               className={`px-4 py-2 rounded-full ${activeFilter === 'best-sellers' ? 'bg-gradient-purple-pink text-white' : 'bg-white text-text hover:bg-gray-100'} transition-colors font-medium flex items-center`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -151,7 +252,10 @@ export default function CategoryPage({ params }) {
               Best Sellers
             </button>
             <button
-              onClick={() => setActiveFilter('featured')}
+              onClick={() => {
+                setActiveFilter('featured');
+                setLimit(10);
+              }}
               className={`px-4 py-2 rounded-full ${activeFilter === 'featured' ? 'bg-gradient-purple-pink text-white' : 'bg-white text-text hover:bg-gray-100'} transition-colors font-medium flex items-center`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -166,7 +270,10 @@ export default function CategoryPage({ params }) {
             {/* All Products Button */}
             <div className="flex flex-col items-center">
               <button
-                onClick={() => setActiveFilter('all')}
+                onClick={() => {
+                  setActiveFilter('all');
+                  setLimit(10);
+                }}
                 className={`p-2 rounded-full ${activeFilter === 'all' ? 'bg-gradient-purple-pink text-white' : 'bg-white text-text hover:bg-gray-100'} transition-colors flex items-center justify-center shadow-sm`}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -179,7 +286,10 @@ export default function CategoryPage({ params }) {
             {/* New Arrivals Button */}
             <div className="flex flex-col items-center">
               <button
-                onClick={() => setActiveFilter('new')}
+                onClick={() => {
+                  setActiveFilter('new');
+                  setLimit(10);
+                }}
                 className={`p-2 rounded-full ${activeFilter === 'new' ? 'bg-gradient-purple-pink text-white' : 'bg-white text-text hover:bg-gray-100'} transition-colors flex items-center justify-center shadow-sm`}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -192,7 +302,10 @@ export default function CategoryPage({ params }) {
             {/* Best Sellers Button */}
             <div className="flex flex-col items-center">
               <button
-                onClick={() => setActiveFilter('best-sellers')}
+                onClick={() => {
+                  setActiveFilter('best-sellers');
+                  setLimit(10);
+                }}
                 className={`p-2 rounded-full ${activeFilter === 'best-sellers' ? 'bg-gradient-purple-pink text-white' : 'bg-white text-text hover:bg-gray-100'} transition-colors flex items-center justify-center shadow-sm`}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -205,7 +318,10 @@ export default function CategoryPage({ params }) {
             {/* Featured Button */}
             <div className="flex flex-col items-center">
               <button
-                onClick={() => setActiveFilter('featured')}
+                onClick={() => {
+                  setActiveFilter('featured');
+                  setLimit(10);
+                }}
                 className={`p-2 rounded-full ${activeFilter === 'featured' ? 'bg-gradient-purple-pink text-white' : 'bg-white text-text hover:bg-gray-100'} transition-colors flex items-center justify-center shadow-sm`}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -232,6 +348,7 @@ export default function CategoryPage({ params }) {
                   <button
                     onClick={() => {
                       setActiveSortOption('popularity');
+                      setLimit(10);
                       setOpenDropdown(null);
                     }}
                     className={`block w-full text-left px-4 py-2 text-sm ${activeSortOption === 'popularity' ? 'bg-primary-light text-primary font-medium' : 'text-gray-700 hover:bg-gray-100'}`}
@@ -241,6 +358,7 @@ export default function CategoryPage({ params }) {
                   <button
                     onClick={() => {
                       setActiveSortOption('price-asc');
+                      setLimit(10);
                       setOpenDropdown(null);
                     }}
                     className={`block w-full text-left px-4 py-2 text-sm ${activeSortOption === 'price-asc' ? 'bg-primary-light text-primary font-medium' : 'text-gray-700 hover:bg-gray-100'}`}
@@ -250,6 +368,7 @@ export default function CategoryPage({ params }) {
                   <button
                     onClick={() => {
                       setActiveSortOption('price-desc');
+                      setLimit(10);
                       setOpenDropdown(null);
                     }}
                     className={`block w-full text-left px-4 py-2 text-sm ${activeSortOption === 'price-desc' ? 'bg-primary-light text-primary font-medium' : 'text-gray-700 hover:bg-gray-100'}`}
@@ -259,6 +378,7 @@ export default function CategoryPage({ params }) {
                   <button
                     onClick={() => {
                       setActiveSortOption('newest');
+                      setLimit(10);
                       setOpenDropdown(null);
                     }}
                     className={`block w-full text-left px-4 py-2 text-sm ${activeSortOption === 'newest' ? 'bg-primary-light text-primary font-medium' : 'text-gray-700 hover:bg-gray-100'}`}
@@ -268,6 +388,7 @@ export default function CategoryPage({ params }) {
                   <button
                     onClick={() => {
                       setActiveSortOption('rating');
+                      setLimit(10);
                       setOpenDropdown(null);
                     }}
                     className={`block w-full text-left px-4 py-2 text-sm ${activeSortOption === 'rating' ? 'bg-primary-light text-primary font-medium' : 'text-gray-700 hover:bg-gray-100'}`}
@@ -285,7 +406,10 @@ export default function CategoryPage({ params }) {
             <select
               className="bg-white border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               value={activeSortOption}
-              onChange={(e) => setActiveSortOption(e.target.value)}
+              onChange={(e) => {
+                setActiveSortOption(e.target.value);
+                setLimit(10);
+              }}
             >
               <option value="popularity">Popularity</option>
               <option value="price-asc">Price: Low to High</option>
@@ -299,66 +423,10 @@ export default function CategoryPage({ params }) {
         </div>
 
         {/* Products Grid */}
-        {displayProducts.length > 0 ? (
+        {displayedProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {displayProducts.map((product) => (
-              <div key={product._id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-                <Link href={`/products/${product.slug}`} className="block relative h-64 w-full overflow-hidden">
-                  <ImageWithFallback
-                    src={product.image || (product.images && product.images[0])}
-                    alt={product.name}
-                    fill
-                    className="object-cover transition-transform hover:scale-110 duration-500"
-                  />
-                  {product.mrp > product.price && (
-                    <div className="absolute top-2 left-2 bg-gradient-pink-orange text-white text-xs px-3 py-1.5 rounded-full font-medium shadow-md border border-white">
-                      {Math.round(((product.mrp - product.price) / product.mrp) * 100)}% OFF
-                    </div>
-                  )}
-                </Link>
-                <div className="p-4">
-                  <Link href={`/products/${product.slug}`} className="block">
-                    <h3 className="text-lg font-semibold mb-2 text-primary hover:text-primary-dark transition-colors">
-                      {product.name}
-                    </h3>
-                  </Link>
-                  <div className="flex items-center mb-2">
-                    <div className="flex text-yellow-400">
-                      {[...Array(5)].map((_, i) => (
-                        <svg key={i} xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 ${i < Math.floor(product.rating || product.ratings || 0) ? 'fill-current' : 'stroke-current fill-none'}`} viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                        </svg>
-                      ))}
-                    </div>
-                    <span className="text-text-light text-sm ml-1">
-                      ({product.numReviews || 0} reviews)
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <span className="text-xl font-bold text-primary">₹{product.price}</span>
-                      {product.mrp > product.price && (
-                        <span className="text-sm text-text-light line-through ml-2">₹{product.mrp}</span>
-                      )}
-                    </div>
-                    <button className="bg-gradient-purple-pink text-white p-2 rounded-full hover:opacity-90 transition-opacity">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                      </svg>
-                    </button>
-                  </div>
-                  {product.countInStock <= 5 && product.countInStock > 0 && (
-                    <div className="mt-2 text-xs text-red-600 font-medium">
-                      Only {product.countInStock} left in stock
-                    </div>
-                  )}
-                  {product.countInStock === 0 && (
-                    <div className="mt-2 text-xs text-red-600 font-medium">
-                      Out of stock
-                    </div>
-                  )}
-                </div>
-              </div>
+            {displayedProducts.map((product) => (
+              <ProductCard key={product._id} product={product} />
             ))}
           </div>
         ) : (
@@ -376,31 +444,22 @@ export default function CategoryPage({ params }) {
           </div>
         )}
 
-        {/* Pagination */}
-        {displayProducts.length > 0 && (
-          <div className="mt-12 flex justify-center">
-            <nav className="flex items-center space-x-2">
-              <button className="w-10 h-10 rounded-full flex items-center justify-center border border-gray-300 text-text-light hover:bg-gray-100 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <button className="w-10 h-10 rounded-full flex items-center justify-center bg-gradient-purple-pink text-white">
-                1
-              </button>
-              <button className="w-10 h-10 rounded-full flex items-center justify-center border border-gray-300 text-text-light hover:bg-gray-100 transition-colors">
-                2
-              </button>
-              <button className="w-10 h-10 rounded-full flex items-center justify-center border border-gray-300 text-text-light hover:bg-gray-100 transition-colors">
-                3
-              </button>
-              <button className="w-10 h-10 rounded-full flex items-center justify-center border border-gray-300 text-text-light hover:bg-gray-100 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </nav>
-          </div>
+        {/* Load More */}
+        {products.length > 0 && (
+          <LoadMore
+            initialLimit={10}
+            increment={10}
+            totalItems={products.length}
+            onLoadMore={(newLimit) => {
+              setLoadingMore(true);
+              // Simulate loading delay
+              setTimeout(() => {
+                setLimit(newLimit);
+                setLoadingMore(false);
+              }, 500);
+            }}
+            isLoading={loadingMore}
+          />
         )}
       </div>
     </div>

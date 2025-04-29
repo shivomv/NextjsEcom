@@ -7,6 +7,7 @@ import ProductCard from '@/components/products/ProductCard';
 import ProductFilter from '@/components/products/ProductFilter';
 import Pagination from '@/components/common/Pagination';
 import Breadcrumb from '@/components/common/Breadcrumb';
+import MobileCategoryList from '@/components/common/MobileCategoryList';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { categoryAPI, productAPI } from '@/services/api';
 export default function ProductsPage() {
@@ -147,6 +148,19 @@ export default function ProductsPage() {
       <div className="container mx-auto px-4 py-8">
         <Breadcrumb items={breadcrumbItems} />
 
+        {/* Mobile Category List - only visible on mobile */}
+        <div className="md:hidden">
+          {categories.length > 0 && (
+            <MobileCategoryList
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onCategoryChange={handleCategoryChange}
+              baseUrl="/products"
+              searchQuery={searchTerm}
+            />
+          )}
+        </div>
+
         <div className="flex flex-col md:flex-row gap-8">
           {/* Sidebar Filters */}
           <div className="w-full md:w-1/4">
@@ -176,20 +190,21 @@ export default function ProductsPage() {
               </h1>
 
               <div className="flex items-center">
-                <span className="text-sm text-text-light mr-2">Sort by:</span>
+                <span className="text-xs text-gray-600 whitespace-nowrap mr-2">Sort by:</span>
                 <div className="relative">
                   <select
                     value={sortOption}
                     onChange={(e) => handleSortChange(e.target.value)}
-                    className="border border-gray-300 rounded-md pl-2 pr-8 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary appearance-none"
+                    className="border border-gray-300 rounded-md pl-2 pr-6 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary appearance-none bg-white"
                   >
                     <option value="newest">Newest</option>
-                    <option value="price-asc">Price: Low to High</option>
-                    <option value="price-desc">Price: High to Low</option>
+                    <option value="price-asc">Price: Low-High</option>
+                    <option value="price-desc">Price: High-Low</option>
                     <option value="rating">Top Rated</option>
+                    <option value="popularity">Popular</option>
                   </select>
                   <svg
-                    className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none"
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-500 pointer-events-none"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >

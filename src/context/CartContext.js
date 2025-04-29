@@ -146,7 +146,7 @@ export const CartProvider = ({ children }) => {
                     hindiName: item.hindiName || item.name,
                     image: item.image,
                     price: item.price,
-                    stock: item.qty > 0 ? item.qty * 2 : 10, // Fallback stock value
+                    stock: item.stock || 0, // Use actual stock value, default to 0 if not available
                     qty: item.qty,
                   },
                 });
@@ -418,7 +418,7 @@ export const CartProvider = ({ children }) => {
                     hindiName: item.hindiName || item.name,
                     image: item.image,
                     price: item.price,
-                    stock: item.qty > 0 ? item.qty * 2 : 10, // Fallback stock value
+                    stock: item.stock || 0, // Use actual stock value, default to 0 if not available
                     qty: item.qty,
                   },
                 });

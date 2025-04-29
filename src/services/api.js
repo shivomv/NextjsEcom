@@ -136,6 +136,16 @@ export const categoryAPI = {
     }
   },
 
+  // Get all categories with product counts
+  getCategoriesWithCounts: async () => {
+    try {
+      const { data } = await api.get('/categories/with-counts');
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
   // Get category by ID
   getCategoryById: async (id) => {
     try {

@@ -15,11 +15,18 @@ export default function CartPage() {
   const [tax, setTax] = useState(0);
   const [isClient, setIsClient] = useState(false);
 
-  // Set isClient to true when component mounts
+  // Set isClient to true when component mounts and refresh cart data
   useEffect(() => {
     setIsClient(true);
-    // No need to call refreshCart here as the CartContext already loads the cart data
-  }, []);
+
+    // Refresh cart data to ensure we have the latest stock information
+    if (isAuthenticated) {
+      refreshCart();
+    }
+  }, [isAuthenticated, refreshCart]);
+
+  // Check if any items are out of stock
+  const hasOutOfStockItems = cartItems.some(item => item.stock <= 0);
 
   // Calculate totals whenever cart items change
   useEffect(() => {
@@ -59,11 +66,17 @@ export default function CartPage() {
       return;
     }
 
-    // Ensure stock is a valid number
-    const stock = typeof item.stock === 'number' ? item.stock : parseInt(item.stock) || 10;
+    // Ensure stock is a valid number (default to 0 if not available)
+    const stock = typeof item.stock === 'number' ? item.stock : parseInt(item.stock) || 0;
 
     // Skip update if quantity hasn't changed
     if (qty === item.qty) {
+      return;
+    }
+
+    // Skip update if item is out of stock
+    if (stock <= 0) {
+      console.error('Cannot update quantity for out-of-stock item:', item.name);
       return;
     }
 
@@ -78,6 +91,8 @@ export default function CartPage() {
           _id: productId,
           // Ensure price is a number
           price: typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0,
+          // Ensure stock is properly passed
+          stock: stock,
         }, qty);
 
         // No need to call refreshCart here as addToCart already updates the cart
@@ -149,7 +164,7 @@ export default function CartPage() {
               {cartItems.map((item) => (
                 <div key={typeof item.product === 'object' ? item.product._id : item.product} className="p-4 flex flex-col sm:flex-row">
                   {/* Product Image */}
-                  <div className="sm:w-24 h-24 flex-shrink-0 bg-gray-100 rounded-md overflow-hidden mb-4 sm:mb-0">
+                  <div className="sm:w-24 h-24 flex-shrink-0 bg-gray-100 rounded-md overflow-hidden mb-4 sm:mb-0 relative">
                     {item.image ? (
                       <div className="relative w-full h-full">
                         <Image
@@ -157,12 +172,30 @@ export default function CartPage() {
                           alt={item.name}
                           fill
                           sizes="96px"
-                          className="object-cover"
+                          className={`object-cover ${item.stock <= 0 ? 'opacity-50' : ''}`}
                         />
+
+                        {/* Out of stock overlay */}
+                        {item.stock <= 0 && (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="bg-red-600 text-white px-2 py-1 text-xs rounded-md font-bold transform -rotate-12 shadow-lg">
+                              OUT OF STOCK
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <span className="text-gray-500 text-sm">No Image</span>
+
+                        {/* Out of stock overlay for no image */}
+                        {item.stock <= 0 && (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="bg-red-600 text-white px-2 py-1 text-xs rounded-md font-bold transform -rotate-12 shadow-lg">
+                              OUT OF STOCK
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -171,12 +204,38 @@ export default function CartPage() {
                   <div className="sm:ml-4 flex-grow">
                     <div className="flex flex-col sm:flex-row sm:justify-between">
                       <div>
-                        <h3 className="text-lg font-medium">
-                          <Link href={`/products/${typeof item.product === 'object' ? item.product._id : item.product}`} className="hover:text-primary">
-                            {item.name}
-                          </Link>
-                        </h3>
+                        <div className="flex items-center">
+                          <h3 className="text-lg font-medium">
+                            <Link href={`/products/${typeof item.product === 'object' ? item.product._id : item.product}`} className="hover:text-primary">
+                              {item.name}
+                            </Link>
+                          </h3>
+
+                          {/* Out of stock badge */}
+                          {item.stock <= 0 && (
+                            <span className="ml-2 bg-red-100 text-red-600 text-xs px-2 py-1 rounded-full font-bold">
+                              OUT OF STOCK
+                            </span>
+                          )}
+                        </div>
                         <p className="text-gray-600 text-sm">{item.hindiName}</p>
+
+                        {/* Stock warning messages */}
+                        {item.stock <= 0 ? (
+                          <p className="text-red-600 text-sm mt-1 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            This item is currently out of stock
+                          </p>
+                        ) : item.stock < 5 ? (
+                          <p className="text-amber-600 text-sm mt-1 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            Only {item.stock} left in stock
+                          </p>
+                        ) : null}
                       </div>
                       <div className="mt-2 sm:mt-0 text-right">
                         <p className="font-bold">{formatPrice(item.price * item.qty)}</p>
@@ -187,23 +246,31 @@ export default function CartPage() {
                     <div className="mt-4 flex flex-col sm:flex-row sm:justify-between sm:items-center">
                       {/* Quantity Selector */}
                       <div className="flex items-center">
-                        <button
-                          onClick={() => handleQuantityChange(item, item.qty - 1)}
-                          className="bg-gray-200 px-3 py-1 rounded-l-md hover:bg-gray-300"
-                          disabled={item.qty <= 1}
-                        >
-                          -
-                        </button>
-                        <span className="w-10 text-center border-t border-b border-gray-300 py-1">
-                          {item.qty}
-                        </span>
-                        <button
-                          onClick={() => handleQuantityChange(item, item.qty + 1)}
-                          className="bg-gray-200 px-3 py-1 rounded-r-md hover:bg-gray-300"
-                          disabled={item.qty >= item.stock}
-                        >
-                          +
-                        </button>
+                        {item.stock <= 0 ? (
+                          <div className="bg-red-50 border border-red-200 text-red-600 px-3 py-1 rounded-md text-sm">
+                            Out of Stock
+                          </div>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => handleQuantityChange(item, item.qty - 1)}
+                              className="bg-gray-200 px-3 py-1 rounded-l-md hover:bg-gray-300"
+                              disabled={item.qty <= 1}
+                            >
+                              -
+                            </button>
+                            <span className="w-10 text-center border-t border-b border-gray-300 py-1">
+                              {item.qty}
+                            </span>
+                            <button
+                              onClick={() => handleQuantityChange(item, item.qty + 1)}
+                              className="bg-gray-200 px-3 py-1 rounded-r-md hover:bg-gray-300"
+                              disabled={item.qty >= item.stock}
+                            >
+                              +
+                            </button>
+                          </>
+                        )}
                       </div>
 
                       {/* Remove Button */}
@@ -218,7 +285,11 @@ export default function CartPage() {
                             setTimeout(() => refreshCart(), 300); // Small delay to allow server to process
                           }
                         }}
-                        className="mt-2 sm:mt-0 text-red-600 hover:text-red-800 text-sm flex items-center"
+                        className={`mt-2 sm:mt-0 flex items-center ${
+                          item.stock <= 0
+                            ? 'bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm font-medium'
+                            : 'text-red-600 hover:text-red-800 text-sm'
+                        }`}
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -301,12 +372,43 @@ export default function CartPage() {
               </div>
 
               {/* Checkout Button */}
-              <Link
-                href={isAuthenticated ? "/checkout" : "/login?redirect=checkout"}
-                className="block w-full bg-primary text-white text-center px-4 py-3 rounded-md hover:bg-primary-dark transition-colors mt-6"
-              >
-                {isAuthenticated ? 'Proceed to Checkout' : 'Login to Checkout'}
-              </Link>
+              {hasOutOfStockItems ? (
+                <div className="mt-6 space-y-3">
+                  <div className="block w-full bg-red-100 border border-red-300 text-red-700 text-center px-4 py-3 rounded-md">
+                    <div className="flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      <span>Checkout blocked: Out-of-stock items in cart</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      // Find all out-of-stock items
+                      const outOfStockItems = cartItems.filter(item => item.stock <= 0);
+
+                      // Remove each out-of-stock item
+                      outOfStockItems.forEach(async (item) => {
+                        const productId = typeof item.product === 'object' ? item.product._id : item.product;
+                        await removeFromCart(productId);
+                      });
+
+                      // Refresh cart after a short delay
+                      setTimeout(() => refreshCart(), 500);
+                    }}
+                    className="block w-full bg-red-600 hover:bg-red-700 text-white text-center px-4 py-3 rounded-md transition-colors"
+                  >
+                    Remove All Out-of-Stock Items
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  href={isAuthenticated ? "/checkout" : "/login?redirect=checkout"}
+                  className="block w-full bg-primary text-white text-center px-4 py-3 rounded-md hover:bg-primary-dark transition-colors mt-6"
+                >
+                  {isAuthenticated ? 'Proceed to Checkout' : 'Login to Checkout'}
+                </Link>
+              )}
 
               {/* Free Shipping Notice */}
               {cartTotal < 500 && (
@@ -365,6 +467,23 @@ export default function CartPage() {
             )}
           </div>
         </div>
+
+        {/* Out of stock warning */}
+        {isClient && hasOutOfStockItems && cartItems.length > 0 && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+            <div className="flex">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div>
+                <p className="font-bold">Warning: Out of Stock Items</p>
+                <p className="text-sm">
+                  Your cart contains items that are currently out of stock. Please remove these items to proceed with checkout.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {renderCartContents()}
       </div>
