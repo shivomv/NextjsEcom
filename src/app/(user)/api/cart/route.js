@@ -161,21 +161,36 @@ export async function PUT(request) {
  */
 export async function DELETE(request) {
   try {
+    console.log('DELETE /api/cart - Starting cart clear operation');
+
     // Check if authenticated
     const authResult = await authMiddleware(request);
     if (!authResult.success) {
+      console.log('DELETE /api/cart - Authentication failed');
       return authResult.status;
     }
 
     await dbConnect();
+    const userId = authResult.user._id;
+    console.log(`DELETE /api/cart - Clearing cart for user: ${userId}`);
 
     // Find user's cart
-    const cart = await Cart.findOne({ user: authResult.user._id });
+    const cart = await Cart.findOne({ user: userId });
 
     // If cart exists, clear it
     if (cart) {
+      // Check if cart is already empty
+      if (cart.cartItems.length === 0) {
+        console.log(`DELETE /api/cart - Cart already empty for user: ${userId}`);
+        return NextResponse.json({ success: true, message: 'Cart already empty' });
+      }
+
+      // Clear the cart
       cart.cartItems = [];
       await cart.save();
+      console.log(`DELETE /api/cart - Cart cleared successfully for user: ${userId}`);
+    } else {
+      console.log(`DELETE /api/cart - No cart found for user: ${userId}`);
     }
 
     return NextResponse.json({ success: true, message: 'Cart cleared successfully' });

@@ -321,7 +321,7 @@ export default function ReviewStep({
           <button
             type="button"
             onClick={handlePlaceOrder}
-            className="bg-primary text-white px-6 py-3 rounded-md hover:bg-primary-dark transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 flex items-center"
+            className={`${paymentMethod.paymentMethod === 'RazorPay' ? 'bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600' : 'bg-primary hover:bg-primary-dark'} text-white px-6 py-3 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 flex items-center`}
             disabled={loading}
           >
             {loading ? (
@@ -332,8 +332,15 @@ export default function ReviewStep({
                 </svg>
                 Processing...
               </>
+            ) : paymentMethod.paymentMethod === 'RazorPay' ? (
+              <>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+                Pay Now
+              </>
             ) : (
-              'Place Order'
+              'Confirm Order'
             )}
           </button>
         )}

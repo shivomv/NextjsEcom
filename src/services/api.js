@@ -469,8 +469,22 @@ export const cartAPI = {
       const userInfo = typeof window !== 'undefined' ? localStorage.getItem('userInfo') : null;
 
       if (userInfo) {
+        // Check for rate limiting
+        const now = Date.now();
+        const lastApiClearTime = window._lastApiCartClearTime || 0;
+
+        // Limit API calls to once every 5 seconds
+        if (now - lastApiClearTime < 5000) {
+          console.log('API call to clear cart skipped - too soon since last call');
+          return { success: true, message: 'Rate limited, using cached result' };
+        }
+
+        // Update the last API clear time
+        window._lastApiCartClearTime = now;
+
         // Authenticated user - use protected endpoint
         try {
+          console.log('Sending DELETE request to /api/cart');
           const { data } = await api.delete('/cart');
           return data;
         } catch (error) {

@@ -38,6 +38,13 @@ export default function OrderSuccessPage() {
           throw new Error(data.message || 'Failed to fetch order details');
         }
 
+        // If this is a Razorpay order and it's not paid, redirect to order details page
+        if (data.paymentMethod === 'RazorPay' && !data.isPaid) {
+          console.log('Redirecting to order details page for unpaid Razorpay order');
+          window.location.href = `/account/orders/${data._id}`;
+          return;
+        }
+
         setOrder(data);
       } catch (error) {
         console.error('Error fetching order:', error);
@@ -57,10 +64,21 @@ export default function OrderSuccessPage() {
   // Clear cart once when order is loaded successfully
   useEffect(() => {
     if (order && !loading && !error) {
-      // Clear cart only once when order is successfully loaded
-      clearCart();
+      // Check if cart has already been cleared for this order
+      const cartCleared = sessionStorage.getItem('cartCleared');
+      const clearedOrderId = sessionStorage.getItem('clearedOrderId');
+
+      // Only clear if not already cleared for this order
+      if (!cartCleared || clearedOrderId !== orderId) {
+        console.log('Clearing cart for order:', orderId);
+        clearCart();
+        // Store the order ID to prevent multiple clears for the same order
+        sessionStorage.setItem('clearedOrderId', orderId);
+      } else {
+        console.log('Cart already cleared for this order, skipping');
+      }
     }
-  }, [order, loading, error, clearCart]);
+  }, [order, loading, error, clearCart, orderId]);
 
   // Format date
   const formatDate = (dateString) => {
@@ -280,10 +298,7 @@ export default function OrderSuccessPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
             <button
               onClick={() => {
-                // Prefetch the orders page data before navigating
-                // This helps reduce the perceived loading time
-                router.prefetch('/account/orders');
-                router.push('/account/orders');
+                window.location.href = '/account/orders';
               }}
               className="bg-primary text-white px-6 py-3 rounded-md text-center hover:bg-primary-dark transition-colors"
             >

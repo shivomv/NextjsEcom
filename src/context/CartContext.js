@@ -357,6 +357,19 @@ export const CartProvider = ({ children }) => {
   // Clear cart
   const clearCart = async () => {
     try {
+      // Prevent multiple rapid calls using a module-level variable
+      const now = Date.now();
+      const lastClearTime = window._lastCartClearTime || 0;
+
+      // Limit clearing to once every 3 seconds
+      if (now - lastClearTime < 3000) {
+        console.log('Skipping cart clear - too soon since last clear');
+        return;
+      }
+
+      // Update the last clear time
+      window._lastCartClearTime = now;
+
       // If authenticated, clear cart via API
       if (isAuthenticated) {
         setLoading(true);
@@ -367,6 +380,9 @@ export const CartProvider = ({ children }) => {
       dispatch({ type: 'CART_CLEAR_ITEMS' });
 
       setLoading(false);
+
+      // Store a flag in sessionStorage to indicate the cart has been cleared
+      sessionStorage.setItem('cartCleared', 'true');
     } catch (error) {
       console.error('Error clearing cart:', error);
       setLoading(false);
@@ -376,6 +392,19 @@ export const CartProvider = ({ children }) => {
   // Refresh cart data from server
   const refreshCart = async () => {
     try {
+      // Prevent multiple rapid refreshes using a module-level variable
+      const now = Date.now();
+      const lastRefreshTime = window._lastCartRefreshTime || 0;
+
+      // Limit refreshes to once every 2 seconds
+      if (now - lastRefreshTime < 2000) {
+        console.log('Skipping cart refresh - too soon since last refresh');
+        return;
+      }
+
+      // Update the last refresh time
+      window._lastCartRefreshTime = now;
+
       // Only refresh if authenticated
       if (isAuthenticated && user) {
         setLoading(true);
@@ -403,6 +432,7 @@ export const CartProvider = ({ children }) => {
               });
 
             if (hasCartChanged) {
+              console.log('Cart has changed, updating from server');
               // Replace the entire cart with the server data
               dispatch({
                 type: 'CART_CLEAR_ITEMS',
@@ -423,6 +453,8 @@ export const CartProvider = ({ children }) => {
                   },
                 });
               });
+            } else {
+              console.log('Cart has not changed, skipping update');
             }
           }
         } catch (error) {
@@ -472,6 +504,21 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  // Calculate prices
+  const itemsPrice = state.cartItems.reduce(
+    (acc, item) => acc + (item.price * item.qty),
+    0
+  );
+
+  // Calculate shipping price (free shipping for orders over ₹500)
+  const shippingPrice = itemsPrice > 500 ? 0 : 50;
+
+  // Calculate tax price (5% GST)
+  const taxPrice = Number((0.05 * itemsPrice).toFixed(2));
+
+  // Calculate total price
+  const totalPrice = Number(itemsPrice) + Number(shippingPrice) + Number(taxPrice);
+
   return (
     <CartContext.Provider
       value={{
@@ -480,6 +527,10 @@ export const CartProvider = ({ children }) => {
         paymentMethod: state.paymentMethod,
         loading,
         isInitialized: state.isInitialized,
+        itemsPrice,
+        shippingPrice,
+        taxPrice,
+        totalPrice,
         addToCart,
         removeFromCart,
         saveShippingAddress,

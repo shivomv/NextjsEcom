@@ -255,7 +255,7 @@ export default function CheckoutPage() {
     if (!window.Razorpay) {
       await loadRazorpayScript();
     }
-
+    
     // Open Razorpay checkout
     openRazorpayCheckout(data, tempOrderData);
   };
@@ -266,18 +266,18 @@ export default function CheckoutPage() {
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
       script.async = true;
-
+      
       script.onload = () => {
         console.log('Razorpay script loaded successfully');
         resolve(true);
       };
-
+      
       script.onerror = () => {
         console.error('Failed to load Razorpay script');
         setError('Failed to load payment gateway. Please try again later.');
         reject(new Error('Failed to load Razorpay script'));
       };
-
+      
       document.body.appendChild(script);
     });
   };
@@ -294,8 +294,6 @@ export default function CheckoutPage() {
       order_id: paymentData.order.id,
       handler: async function(response) {
         try {
-          console.log('Payment successful, handling response:', response);
-
           // Create order after successful payment
           const createOrderData = {
             orderItems: orderData.items.map(item => ({
@@ -323,9 +321,7 @@ export default function CheckoutPage() {
             isPaid: true,
             paidAt: new Date().toISOString(),
           };
-
-          console.log('Creating order with data:', JSON.stringify(createOrderData));
-
+          
           // Call API to create order
           const orderResponse = await fetch('/api/orders/create-after-payment', {
             method: 'POST',
@@ -342,31 +338,23 @@ export default function CheckoutPage() {
               }
             }),
           });
-
-          console.log('Order API response status:', orderResponse.status);
-          const responseData = await orderResponse.json();
-          console.log('Order API response data:', responseData);
-
+          
+          const orderData = await orderResponse.json();
+          
           if (!orderResponse.ok) {
-            throw new Error(responseData.message || 'Failed to create order after payment');
+            throw new Error(orderData.message || 'Failed to create order after payment');
           }
-
+          
           // Clear the temporary order data
           sessionStorage.removeItem('tempOrderData');
-
+          
           // Clear the cart
           clearCart();
-
-          // Use window.location for redirection instead of router.push
-          console.log('Redirecting to success page with order ID:', responseData._id);
-          window.location.href = `/checkout/success?id=${responseData._id}`;
+          
+          // Redirect to success page with the new order ID
+          router.push(`/checkout/success?id=${orderData._id}`);
         } catch (error) {
           console.error('Error creating order after payment:', error);
-          console.error('Error details:', {
-            name: error.name,
-            message: error.message,
-            stack: error.stack,
-          });
           setError('Payment was successful, but there was an error creating your order. Please contact customer support.');
           setOrderLoading(false);
         }
@@ -382,40 +370,21 @@ export default function CheckoutPage() {
         ondismiss: function() {
           console.log('Checkout form closed by user');
           setOrderLoading(false);
-
-          // Show a message to the user
-          setError('Payment cancelled. You can try again or return to your cart.');
-
-          // Optionally redirect to payment failed page after a short delay
-          setTimeout(() => {
-            window.location.href = '/checkout/payment-failed?error=Payment cancelled by user';
-          }, 3000);
         }
       }
     };
-
+    
     const razorpayInstance = new window.Razorpay(options);
-
+    
     razorpayInstance.on('payment.failed', function(response) {
       console.error('Payment failed:', response.error);
       setError(`Payment failed: ${response.error.description}`);
       setOrderLoading(false);
-
-      // Log the error details
-      console.log('Payment failed with error:', {
-        code: response.error.code,
-        description: response.error.description,
-        source: response.error.source,
-        step: response.error.step,
-        reason: response.error.reason,
-        metadata: response.error.metadata,
-      });
-
-      // Use window.location for redirection instead of router.push
-      console.log('Redirecting to payment failed page');
-      window.location.href = `/checkout/payment-failed?error=${encodeURIComponent(response.error.description)}`;
+      
+      // Redirect to payment failed page
+      router.push(`/checkout/payment-failed?error=${encodeURIComponent(response.error.description)}`);
     });
-
+    
     razorpayInstance.open();
   };
 

@@ -15,15 +15,32 @@ export default function CartPage() {
   const [tax, setTax] = useState(0);
   const [isClient, setIsClient] = useState(false);
 
-  // Set isClient to true when component mounts and refresh cart data
+  // Set isClient to true when component mounts
   useEffect(() => {
     setIsClient(true);
+  }, []);
 
-    // Refresh cart data to ensure we have the latest stock information
-    if (isAuthenticated) {
-      refreshCart();
+  // Refresh cart data only once when the component mounts and user is authenticated
+  useEffect(() => {
+    // Skip if not authenticated or not client-side yet
+    if (!isAuthenticated || !isClient) {
+      return;
     }
-  }, [isAuthenticated, refreshCart]);
+
+    // Use a ref to track if we've already refreshed the cart
+    const hasRefreshed = sessionStorage.getItem('cartRefreshed');
+
+    if (!hasRefreshed) {
+      refreshCart();
+      // Mark that we've refreshed the cart in this session
+      sessionStorage.setItem('cartRefreshed', 'true');
+
+      // Clear this flag after 5 minutes to allow occasional refreshes
+      setTimeout(() => {
+        sessionStorage.removeItem('cartRefreshed');
+      }, 5 * 60 * 1000);
+    }
+  }, [isAuthenticated, isClient, refreshCart]);
 
   // Check if any items are out of stock
   const hasOutOfStockItems = cartItems.some(item => item.stock <= 0);
@@ -276,13 +293,21 @@ export default function CartPage() {
                       {/* Remove Button */}
                       <button
                         onClick={async () => {
-                          const productId = typeof item.product === 'object' ? item.product._id : item.product;
+                          // Prevent multiple rapid clicks
+                          if (loading) return;
 
+                          const productId = typeof item.product === 'object' ? item.product._id : item.product;
                           await removeFromCart(productId);
 
-                          // Always refresh for authenticated users after removing an item
+                          // Refresh for authenticated users after removing an item, but limit frequency
                           if (isAuthenticated) {
-                            setTimeout(() => refreshCart(), 300); // Small delay to allow server to process
+                            const lastItemRemoval = sessionStorage.getItem('lastItemRemoval');
+                            const now = Date.now();
+
+                            if (!lastItemRemoval || (now - parseInt(lastItemRemoval)) > 2000) {
+                              setTimeout(() => refreshCart(), 300); // Small delay to allow server to process
+                              sessionStorage.setItem('lastItemRemoval', now.toString());
+                            }
                           }
                         }}
                         className={`mt-2 sm:mt-0 flex items-center ${
@@ -384,8 +409,13 @@ export default function CartPage() {
                   </div>
                   <button
                     onClick={() => {
+                      // Prevent multiple rapid clicks
+                      if (loading) return;
+
                       // Find all out-of-stock items
                       const outOfStockItems = cartItems.filter(item => item.stock <= 0);
+
+                      if (outOfStockItems.length === 0) return;
 
                       // Remove each out-of-stock item
                       outOfStockItems.forEach(async (item) => {
@@ -393,8 +423,14 @@ export default function CartPage() {
                         await removeFromCart(productId);
                       });
 
-                      // Refresh cart after a short delay
-                      setTimeout(() => refreshCart(), 500);
+                      // Refresh cart after a short delay, but only once
+                      const lastRemoval = sessionStorage.getItem('lastOutOfStockRemoval');
+                      const now = Date.now();
+
+                      if (!lastRemoval || (now - parseInt(lastRemoval)) > 3000) {
+                        setTimeout(() => refreshCart(), 500);
+                        sessionStorage.setItem('lastOutOfStockRemoval', now.toString());
+                      }
                     }}
                     className="block w-full bg-red-600 hover:bg-red-700 text-white text-center px-4 py-3 rounded-md transition-colors"
                   >
@@ -445,7 +481,18 @@ export default function CartPage() {
           <div className="flex items-center gap-4">
             {isClient && isAuthenticated && (
               <button
-                onClick={() => refreshCart()}
+                onClick={() => {
+                  // Prevent multiple rapid refreshes
+                  const lastRefresh = sessionStorage.getItem('lastCartRefresh');
+                  const now = Date.now();
+
+                  if (!lastRefresh || (now - parseInt(lastRefresh)) > 3000) {
+                    refreshCart();
+                    sessionStorage.setItem('lastCartRefresh', now.toString());
+                    // Reset the cartRefreshed flag to allow the next auto-refresh
+                    sessionStorage.removeItem('cartRefreshed');
+                  }
+                }}
                 className="flex items-center text-primary hover:text-primary-dark transition-colors"
                 disabled={loading}
                 title="Refresh cart data from server"

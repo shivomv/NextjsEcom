@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import ImageWithFallback from '@/components/common/ImageWithFallback';
+import RazorpayButton from '@/components/payment/RazorpayButton';
+import OrderReceiptPDF from '@/components/orders/OrderReceiptPDF';
 
 export default function OrderDetailPage({ params }) {
   const { id } = params;
@@ -665,13 +667,83 @@ export default function OrderDetailPage({ params }) {
               <p className="text-sm text-gray-900">
                 <span className="font-medium">Method:</span> {order.paymentMethod}
               </p>
-              <p className="text-sm text-gray-900 mt-1">
-                <span className="font-medium">Status:</span> {order.isPaid ? 'Paid' : 'Pending'}
+              <p className={`text-sm ${!order.isPaid && order.paymentMethod === 'RazorPay' ? 'text-red-600 font-medium' : 'text-gray-900'} mt-1`}>
+                <span className="font-medium">Status:</span> {order.isPaid ? 'Paid' : order.paymentMethod === 'RazorPay' ? 'Payment Required' : 'Pending'}
               </p>
               {order.isPaid && order.paidAt && (
                 <p className="text-sm text-gray-900 mt-1">
                   <span className="font-medium">Paid on:</span> {formatDate(order.paidAt)}
                 </p>
+              )}
+
+              {/* Payment details for paid orders */}
+              {order.isPaid && order.paymentResult && (
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">Payment Details</h3>
+                  {order.paymentResult.id && (
+                    <p className="text-sm text-gray-900">
+                      <span className="font-medium">Transaction ID:</span> {order.paymentResult.id}
+                    </p>
+                  )}
+                  {order.paymentResult.receipt_number && (
+                    <p className="text-sm text-gray-900 mt-1">
+                      <span className="font-medium">Receipt Number:</span> {order.paymentResult.receipt_number}
+                    </p>
+                  )}
+                  {order.paymentResult.amount && (
+                    <p className="text-sm text-gray-900 mt-1">
+                      <span className="font-medium">Amount Paid:</span> {formatPrice(order.paymentResult.amount)}
+                    </p>
+                  )}
+                  {order.paymentResult.gateway && (
+                    <p className="text-sm text-gray-900 mt-1">
+                      <span className="font-medium">Payment Gateway:</span> {order.paymentResult.gateway}
+                    </p>
+                  )}
+
+                  {/* Download Receipt Button */}
+                  <div className="mt-3">
+                    <OrderReceiptPDF order={order} user={user} />
+                  </div>
+                </div>
+              )}
+
+              {/* RazorPay Payment Button for unpaid orders */}
+              {!order.isPaid && order.paymentMethod === 'RazorPay' && (
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <div className="bg-yellow-50 p-4 rounded-md mb-4">
+                    <div className="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-600 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                      </svg>
+                      <h3 className="font-medium text-yellow-800">Payment Required</h3>
+                    </div>
+                    <p className="text-sm text-yellow-700 mt-2">
+                      Your order has been placed but payment is pending. Please complete your payment to process your order.
+                    </p>
+                  </div>
+
+                  <p className="text-sm text-gray-700 mb-3">
+                    Complete your online payment securely. You can pay using credit/debit cards, UPI, net banking, or wallets.
+                  </p>
+
+                  <div className="bg-gradient-to-r from-purple-100 to-pink-100 p-4 rounded-md mb-4">
+                    <RazorpayButton
+                      orderId={order._id}
+                      onSuccess={(data) => {
+                        // Refresh the order data after successful payment
+                        setOrder({
+                          ...order,
+                          isPaid: true,
+                          paidAt: new Date().toISOString()
+                        });
+                      }}
+                      onError={(error) => {
+                        console.error('Payment failed:', error);
+                      }}
+                    />
+                  </div>
+                </div>
               )}
             </div>
 

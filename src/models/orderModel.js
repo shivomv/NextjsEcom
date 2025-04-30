@@ -41,8 +41,16 @@ const orderSchema = new mongoose.Schema(
       status: { type: String },
       update_time: { type: String },
       email_address: { type: String },
+      gateway: { type: String },
+      gateway_order_id: { type: String },
+      gateway_signature: { type: String },
+      payment_method_details: { type: Object },
+      currency: { type: String, default: 'INR' },
+      amount: { type: Number },
+      receipt_number: { type: String },
+      receipt_url: { type: String }
     },
-    itemsPrice: {
+    itemsPrice: { 
       type: Number,
       required: true,
       default: 0.0,
