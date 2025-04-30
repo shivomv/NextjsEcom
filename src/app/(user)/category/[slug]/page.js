@@ -161,7 +161,7 @@ export default function CategoryPage({ params }) {
   useEffect(() => {
     const filteredAndSortedProducts = filterAndSortProducts();
     setDisplayedProducts(filteredAndSortedProducts.slice(0, limit));
-  }, [products, activeFilter, activeSortOption, limit]);
+  }, [products, activeFilter, activeSortOption, limit, filterAndSortProducts]);
 
   // Show loading state
   if (loading || categoriesLoading) {

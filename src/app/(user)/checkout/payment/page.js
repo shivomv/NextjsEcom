@@ -1,24 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
-import RazorpayButton from '@/components/payment/RazorpayButton';
+
 import Link from 'next/link';
 
 export default function PaymentPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const paymentMethod = searchParams.get('method');
+  // Search params are used in a commented section (kept for future use)
   const { user, isAuthenticated } = useAuth();
   const { clearCart } = useCart();
 
   const [loading, setLoading] = useState(true);
   const [orderData, setOrderData] = useState(null);
   const [error, setError] = useState('');
-  const [orderId, setOrderId] = useState(null);
+  // Order ID state (not used directly but kept for future use)
   const [paymentProcessing, setPaymentProcessing] = useState(false);
 
   useEffect(() => {
@@ -278,7 +277,7 @@ export default function PaymentPage() {
                     <p className="font-medium">Online Payment (Razorpay)</p>
                   </div>
                   <p className="text-sm text-gray-600 mt-2">
-                    You'll be redirected to Razorpay's secure payment gateway to complete your payment.
+                    You&apos;ll be redirected to Razorpay&apos;s secure payment gateway to complete your payment.
                   </p>
                 </div>
               </div>
