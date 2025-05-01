@@ -49,12 +49,20 @@ export async function POST(request, context) {
     await dbConnect();
     const { id } = context.params;
     const user = authResult.user;
-    const { rating, comment } = await request.json();
+    const { rating, comment, title, images = [] } = await request.json();
 
     // Validate input
     if (!rating || !comment) {
       return NextResponse.json(
         { message: 'Please provide rating and comment' },
+        { status: 400 }
+      );
+    }
+
+    // Validate images (if provided)
+    if (images && !Array.isArray(images)) {
+      return NextResponse.json(
+        { message: 'Images must be an array' },
         { status: 400 }
       );
     }
@@ -72,6 +80,11 @@ export async function POST(request, context) {
         { status: 403 }
       );
     }
+
+    // Get the most recent order for this product
+    const latestOrder = orders.sort((a, b) =>
+      new Date(b.deliveredAt) - new Date(a.deliveredAt)
+    )[0];
 
     const product = await Product.findById(id);
 
@@ -99,7 +112,12 @@ export async function POST(request, context) {
       name: user.name,
       rating: Number(rating),
       comment,
+      title: title || '',
+      images: images || [],
       user: user._id,
+      verifiedPurchase: true,
+      orderId: latestOrder._id,
+      status: 'approved', // Default to approved, can be changed to 'pending' if moderation is needed
     };
 
     // Add review to product
