@@ -8,6 +8,7 @@ import { useCategories } from "@/context/CategoryContext";
 import { useCart } from "@/context/CartContext";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import ProductCard from "@/components/products/ProductCard";
+import { ArrowLeftCircleIcon } from "@heroicons/react/24/outline";
 
 export default function Home() {
   const { parentCategories, loading: categoriesLoading } = useCategories();
@@ -16,17 +17,19 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [recentLoading, setRecentLoading] = useState(true);
   const [heroData, setHeroData] = useState({
-    heroTitle: 'Authentic Spiritual Products',
-    heroSubtitle: 'Discover our collection of traditional and authentic spiritual items crafted with devotion',
-    heroButtonText: 'Shop Now',
-    heroButtonLink: '/products',
-    heroImage: '/images/hero-banner.jpg',
+    heroTitle: "Authentic Spiritual Products",
+    heroSubtitle:
+      "Discover our collection of traditional and authentic spiritual items crafted with devotion",
+    heroButtonText: "Shop Now",
+    heroButtonLink: "/products",
+    heroImage: "/images/hero-banner.jpg",
 
-    promoTitle: 'Special Navratri Collection',
-    promoSubtitle: 'Exclusive discounts on all puja items and decorations for the festive season',
-    promoButtonText: 'Shop the Collection',
-    promoButtonLink: '/products?category=navratri-collection',
-    promoImage: '/images/promo-banner.jpg',
+    promoTitle: "Special Navratri Collection",
+    promoSubtitle:
+      "Exclusive discounts on all puja items and decorations for the festive season",
+    promoButtonText: "Shop the Collection",
+    promoButtonLink: "/products?category=navratri-collection",
+    promoImage: "/images/promo-banner.jpg",
   });
 
   const [heroSlides, setHeroSlides] = useState([]);
@@ -54,12 +57,14 @@ export default function Home() {
           console.log("Fetched promo data:", promoData);
 
           if (promoData) {
-            setHeroData(prevData => ({
+            setHeroData((prevData) => ({
               ...prevData,
               promoTitle: promoData.promoTitle || prevData.promoTitle,
               promoSubtitle: promoData.promoSubtitle || prevData.promoSubtitle,
-              promoButtonText: promoData.promoButtonText || prevData.promoButtonText,
-              promoButtonLink: promoData.promoButtonLink || prevData.promoButtonLink,
+              promoButtonText:
+                promoData.promoButtonText || prevData.promoButtonText,
+              promoButtonLink:
+                promoData.promoButtonLink || prevData.promoButtonLink,
               promoImage: promoData.promoImage || prevData.promoImage,
             }));
           }
@@ -236,20 +241,7 @@ export default function Home() {
             className="inline-flex items-center bg-white hover:bg-gradient-purple-pink hover:text-white border-2 border-gradient-purple-pink text-gradient-purple-pink px-6 py-2 rounded-full font-medium transition-colors"
           >
             View All Products
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 ml-2"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M14 5l7 7m0 0l-7 7m7-7H3"
-              />
-            </svg>
+            <ArrowLeftCircleIcon className="h-5 w-5 ml-2" />
           </Link>
         </div>
       </section>
@@ -303,7 +295,9 @@ export default function Home() {
           </h2>
           <div className="w-24 h-1 bg-gradient-purple-pink mx-auto rounded-full"></div>
           <p className="mt-4 text-text-light max-w-2xl mx-auto">
-            Discover our newest spiritual items, freshly added to our collection. These products are crafted with devotion and traditional techniques.
+            Discover our newest spiritual items, freshly added to our
+            collection. These products are crafted with devotion and traditional
+            techniques.
           </p>
         </div>
 
@@ -348,20 +342,7 @@ export default function Home() {
             className="inline-flex items-center bg-white hover:bg-gradient-purple-pink hover:text-white border-2 border-gradient-purple-pink text-gradient-purple-pink px-6 py-2 rounded-full font-medium transition-colors"
           >
             View All New Products
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 ml-2"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M14 5l7 7m0 0l-7 7m7-7H3"
-              />
-            </svg>
+            <ArrowLeftCircleIcon className="h-5 w-5 ml-2" />
           </Link>
         </div>
       </section>
