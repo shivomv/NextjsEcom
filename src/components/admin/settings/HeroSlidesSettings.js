@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import CloudinaryImagePicker from '@/components/common/CloudinaryImagePicker';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 
@@ -125,15 +124,20 @@ export default function HeroSlidesSettings({ settings, onSave, isSaving }) {
     });
   };
 
-  // Handle drag and drop reordering
-  const handleDragEnd = (result) => {
-    if (!result.destination) return;
+  // Handle moving slides up and down
+  const moveSlide = (index, direction) => {
+    if (
+      (direction === 'up' && index === 0) ||
+      (direction === 'down' && index === slides.length - 1)
+    ) {
+      return; // Can't move further in this direction
+    }
 
     setSlides(prevSlides => {
       const items = Array.from(prevSlides);
-      const [reorderedItem] = items.splice(result.source.index, 1);
-      items.splice(result.destination.index, 0, reorderedItem);
-
+      const newIndex = direction === 'up' ? index - 1 : index + 1;
+      const [movedItem] = items.splice(index, 1);
+      items.splice(newIndex, 0, movedItem);
       return items;
     });
   };
@@ -177,138 +181,142 @@ export default function HeroSlidesSettings({ settings, onSave, isSaving }) {
           </button>
         </div>
 
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="slides">
-            {(provided) => (
-              <div
-                {...provided.droppableProps}
-                ref={provided.innerRef}
-                className="space-y-6"
-              >
-                {slides.map((slide, index) => (
-                  <Draggable key={slide.id} draggableId={slide.id} index={index}>
-                    {(provided) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        className="border border-gray-200 rounded-lg p-4 bg-gray-50"
-                      >
-                        <div className="flex justify-between items-center mb-4">
-                          <div
-                            {...provided.dragHandleProps}
-                            className="flex items-center cursor-move"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
-                            </svg>
-                            <h4 className="font-medium">Slide {index + 1}</h4>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveSlide(index)}
-                            className="text-red-500 hover:text-red-700"
-                            disabled={slides.length <= 1}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {/* Left column - Text content */}
-                          <div className="space-y-4">
-                            {/* Slide Title */}
-                            <div>
-                              <label htmlFor={`slide_${index}_title`} className="block text-sm font-medium text-gray-700">
-                                Title
-                              </label>
-                              <input
-                                type="text"
-                                id={`slide_${index}_title`}
-                                value={slide.title}
-                                onChange={(e) => handleSlideChange(index, 'title', e.target.value)}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
-                              />
-                              {errors[`slide_${index}_title`] && (
-                                <p className="mt-1 text-sm text-red-600">{errors[`slide_${index}_title`]}</p>
-                              )}
-                            </div>
-
-                            {/* Slide Subtitle */}
-                            <div>
-                              <label htmlFor={`slide_${index}_subtitle`} className="block text-sm font-medium text-gray-700">
-                                Subtitle
-                              </label>
-                              <textarea
-                                id={`slide_${index}_subtitle`}
-                                rows="2"
-                                value={slide.subtitle}
-                                onChange={(e) => handleSlideChange(index, 'subtitle', e.target.value)}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
-                              />
-                              {errors[`slide_${index}_subtitle`] && (
-                                <p className="mt-1 text-sm text-red-600">{errors[`slide_${index}_subtitle`]}</p>
-                              )}
-                            </div>
-
-                            {/* Button Text */}
-                            <div>
-                              <label htmlFor={`slide_${index}_buttonText`} className="block text-sm font-medium text-gray-700">
-                                Button Text
-                              </label>
-                              <input
-                                type="text"
-                                id={`slide_${index}_buttonText`}
-                                value={slide.buttonText}
-                                onChange={(e) => handleSlideChange(index, 'buttonText', e.target.value)}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
-                              />
-                            </div>
-
-                            {/* Button Link */}
-                            <div>
-                              <label htmlFor={`slide_${index}_buttonLink`} className="block text-sm font-medium text-gray-700">
-                                Button Link
-                              </label>
-                              <input
-                                type="text"
-                                id={`slide_${index}_buttonLink`}
-                                value={slide.buttonLink}
-                                onChange={(e) => handleSlideChange(index, 'buttonLink', e.target.value)}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
-                              />
-                            </div>
-                          </div>
-
-                          {/* Right column - Image */}
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Slide Image
-                            </label>
-                            <CloudinaryImagePicker
-                              initialImage={slide.image}
-                              onImageUpload={(result) => handleImageUpload(index, result)}
-                              onImageError={(error) => handleImageError(index, error)}
-                              folder="my-shop/banners"
-                              label={`Slide ${index + 1} Image`}
-                              required={true}
-                              errorMessage={errors[`slide_${index}_image`]}
-                            />
-                            <p className="mt-1 text-sm text-gray-500">
-                              Recommended size: 1920x600 pixels
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
+        <div className="space-y-6">
+          {slides.map((slide, index) => (
+            <div
+              key={slide.id}
+              className="border border-gray-200 rounded-lg p-4 bg-gray-50"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center">
+                  <h4 className="font-medium">Slide {index + 1}</h4>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => moveSlide(index, 'up')}
+                    disabled={index === 0}
+                    className={`p-1 rounded ${
+                      index === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveSlide(index, 'down')}
+                    disabled={index === slides.length - 1}
+                    className={`p-1 rounded ${
+                      index === slides.length - 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveSlide(index)}
+                    className="text-red-500 hover:text-red-700 p-1 rounded"
+                    disabled={slides.length <= 1}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
               </div>
-            )}
-          </Droppable>
-        </DragDropContext>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Left column - Text content */}
+                <div className="space-y-4">
+                  {/* Slide Title */}
+                  <div>
+                    <label htmlFor={`slide_${index}_title`} className="block text-sm font-medium text-gray-700">
+                      Title
+                    </label>
+                    <input
+                      type="text"
+                      id={`slide_${index}_title`}
+                      value={slide.title}
+                      onChange={(e) => handleSlideChange(index, 'title', e.target.value)}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+                    />
+                    {errors[`slide_${index}_title`] && (
+                      <p className="mt-1 text-sm text-red-600">{errors[`slide_${index}_title`]}</p>
+                    )}
+                  </div>
+
+                  {/* Slide Subtitle */}
+                  <div>
+                    <label htmlFor={`slide_${index}_subtitle`} className="block text-sm font-medium text-gray-700">
+                      Subtitle
+                    </label>
+                    <textarea
+                      id={`slide_${index}_subtitle`}
+                      rows="2"
+                      value={slide.subtitle}
+                      onChange={(e) => handleSlideChange(index, 'subtitle', e.target.value)}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+                    />
+                    {errors[`slide_${index}_subtitle`] && (
+                      <p className="mt-1 text-sm text-red-600">{errors[`slide_${index}_subtitle`]}</p>
+                    )}
+                  </div>
+
+                  {/* Button Text */}
+                  <div>
+                    <label htmlFor={`slide_${index}_buttonText`} className="block text-sm font-medium text-gray-700">
+                      Button Text
+                    </label>
+                    <input
+                      type="text"
+                      id={`slide_${index}_buttonText`}
+                      value={slide.buttonText}
+                      onChange={(e) => handleSlideChange(index, 'buttonText', e.target.value)}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+                    />
+                  </div>
+
+                  {/* Button Link */}
+                  <div>
+                    <label htmlFor={`slide_${index}_buttonLink`} className="block text-sm font-medium text-gray-700">
+                      Button Link
+                    </label>
+                    <input
+                      type="text"
+                      id={`slide_${index}_buttonLink`}
+                      value={slide.buttonLink}
+                      onChange={(e) => handleSlideChange(index, 'buttonLink', e.target.value)}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+                    />
+                  </div>
+                </div>
+
+                {/* Right column - Image */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Slide Image
+                  </label>
+                  <CloudinaryImagePicker
+                    initialImage={slide.image}
+                    onImageUpload={(result) => handleImageUpload(index, result)}
+                    onImageError={(error) => handleImageError(index, error)}
+                    folder="my-shop/banners"
+                    label={`Slide ${index + 1} Image`}
+                    required={true}
+                    errorMessage={errors[`slide_${index}_image`]}
+                  />
+                  <p className="mt-1 text-sm text-gray-500">
+                    Recommended size: 1920x600 pixels
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Submit Button */}
