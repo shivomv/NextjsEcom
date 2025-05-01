@@ -6,25 +6,24 @@ import ImageWithFallback from "@/components/common/ImageWithFallback";
 import { useCategories } from '@/context/CategoryContext';
 import { useCart } from '@/context/CartContext';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import ProductCard from '@/components/products/ProductCard';
 
 export default function Home() {
   const { parentCategories, loading: categoriesLoading } = useCategories();
-  const { addToCart } = useCart();
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [addingToCartId, setAddingToCartId] = useState(null);
 
   // Fetch featured products
   useEffect(() => {
     const fetchFeaturedProducts = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/products?sort=rating&limit=4');
+        const response = await fetch('/api/products/featured?limit=4');
         if (response.ok) {
           const data = await response.json();
-          setFeaturedProducts(data.products || []);
+          setFeaturedProducts(data || []);
         } else {
-          console.error('Failed to fetch products:', response.status);
+          console.error('Failed to fetch featured products:', response.status);
           setFeaturedProducts([]);
         }
       } catch (error) {
@@ -37,20 +36,6 @@ export default function Home() {
 
     fetchFeaturedProducts();
   }, []);
-
-  // Use fetched products
-  const displayProducts = featuredProducts;
-
-  // Handle add to cart
-  const handleAddToCart = (product) => {
-    setAddingToCartId(product._id || product.id);
-    addToCart(product, 1);
-
-    // Reset button state after animation
-    setTimeout(() => {
-      setAddingToCartId(null);
-    }, 1000);
-  };
 
   return (
     <div className="min-h-screen pb-24 md:pb-0">
@@ -130,68 +115,10 @@ export default function Home() {
           <div className="flex justify-center py-12">
             <LoadingSpinner size="lg" />
           </div>
-        ) : displayProducts.length > 0 ? (
+        ) : featuredProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {displayProducts.map((product) => (
-              <div key={product._id || product.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow">
-                <Link href={`/products/${product.slug}`} className="block relative h-48 overflow-hidden">
-                  <ImageWithFallback
-                    src={product.image || (product.images && product.images[0])}
-                    alt={product.name}
-                    fill
-                    className="object-cover transition-transform hover:scale-110 duration-500"
-                  />
-                  {product.originalPrice > product.price && (
-                    <div className="absolute top-2 left-2 bg-gradient-pink-orange text-white text-xs px-3 py-1.5 rounded-full font-medium shadow-md border border-white">
-                      {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
-                    </div>
-                  )}
-                </Link>
-
-                <div className="p-4">
-                  <Link href={`/products/${product.slug}`}>
-                    <h3 className="text-lg font-bold mb-1 hover:text-gradient-purple-pink transition-colors line-clamp-2">
-                      {product.name}
-                    </h3>
-                  </Link>
-
-                  <div className="flex items-center mb-2">
-                    <div className="flex text-gradient-pink-orange">
-                      {[...Array(5)].map((_, i) => (
-                        <svg key={i} xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 ${i < Math.floor(product.rating || product.ratings || 0) ? 'fill-current' : 'stroke-current fill-none'}`} viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                        </svg>
-                      ))}
-                      <span className="text-xs ml-1 text-text-light">({product.reviews || product.numReviews || 0})</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-lg font-bold">₹{product.price}</span>
-                      {product.originalPrice > product.price && (
-                        <span className="text-sm text-text-light line-through ml-2">₹{product.originalPrice}</span>
-                      )}
-                    </div>
-
-                    <button
-                      onClick={() => handleAddToCart(product)}
-                      disabled={addingToCartId === (product._id || product.id)}
-                      className="bg-gradient-purple-pink hover:opacity-90 text-white p-2 rounded-full shadow-md transition-all transform hover:scale-110"
-                      aria-label="Add to Cart"
-                      title="Add to Cart"
-                    >
-                      {addingToCartId === (product._id || product.id) ? (
-                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                      ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
+            {featuredProducts.map((product) => (
+              <ProductCard key={product._id} product={product} />
             ))}
           </div>
         ) : (
