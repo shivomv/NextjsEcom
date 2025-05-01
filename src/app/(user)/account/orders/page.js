@@ -278,28 +278,37 @@ export default function OrdersPage() {
                       View Details
                     </Link>
                     {(order.status === 'delivered' || order.status === 'Delivered') && (
-                      <button className="inline-flex items-center px-4 py-2 bg-gradient-purple-pink text-white rounded-md hover:opacity-90 transition-opacity text-sm font-medium">
+                      <Link
+                        href={`/account/orders/${order._id}?action=review`}
+                        className="inline-flex items-center px-4 py-2 bg-gradient-purple-pink text-white rounded-md hover:opacity-90 transition-opacity text-sm font-medium"
+                      >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                         Write Review
-                      </button>
+                      </Link>
                     )}
                     {(order.status === 'processing' || order.status === 'Processing' || order.status === 'Pending') && (
-                      <button className="inline-flex items-center px-4 py-2 border border-red-500 text-red-500 rounded-md hover:bg-red-50 transition-colors text-sm font-medium">
+                      <Link
+                        href={`/account/orders/${order._id}?action=cancel`}
+                        className="inline-flex items-center px-4 py-2 border border-red-500 text-red-500 rounded-md hover:bg-red-50 transition-colors text-sm font-medium"
+                      >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                         Cancel Order
-                      </button>
+                      </Link>
                     )}
                     {(order.status === 'delivered' || order.status === 'Delivered') && (
-                      <button className="inline-flex items-center px-4 py-2 border border-yellow-500 text-yellow-500 rounded-md hover:bg-yellow-50 transition-colors text-sm font-medium">
+                      <Link
+                        href={`/account/orders/${order._id}?action=return`}
+                        className="inline-flex items-center px-4 py-2 border border-yellow-500 text-yellow-500 rounded-md hover:bg-yellow-50 transition-colors text-sm font-medium"
+                      >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
                         </svg>
                         Return
-                      </button>
+                      </Link>
                     )}
                   </div>
                 </div>
@@ -308,27 +317,32 @@ export default function OrdersPage() {
                 <div className="p-4">
                   <div className="space-y-4">
                     {order.orderItems.map((item) => (
-                      <div key={item._id || item.product} className="flex items-center gap-4">
-                        <div className="relative h-16 w-16 flex-shrink-0 rounded-md overflow-hidden">
-                          <ImageWithFallback
-                            src={item.image}
-                            alt={item.name}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                        <div className="flex-grow">
-                          <h4 className="font-medium text-primary hover:text-primary-dark transition-colors">
-                            <Link href={`/products/${item.product}`}>
+                      <div key={item._id || item.product} className="relative">
+                        <Link
+                          href={`/products/${item.product}`}
+                          className="absolute inset-0 z-10"
+                          aria-label={`View ${item.name} details`}
+                        ></Link>
+                        <div className="flex items-center gap-4 relative group hover:bg-gray-50 p-2 rounded-md transition-colors">
+                          <div className="relative h-16 w-16 flex-shrink-0 rounded-md overflow-hidden">
+                            <ImageWithFallback
+                              src={item.image}
+                              alt={item.name}
+                              fill
+                              className="object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                          </div>
+                          <div className="flex-grow">
+                            <h4 className="font-medium text-primary group-hover:text-primary-dark transition-colors">
                               {item.name}
-                            </Link>
-                          </h4>
-                          <p className="text-sm text-text-light">
-                            Qty: {item.qty} × ₹{item.price}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-semibold">₹{item.price * item.qty}</p>
+                            </h4>
+                            <p className="text-sm text-text-light">
+                              Qty: {item.qty} × ₹{item.price}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold">₹{item.price * item.qty}</p>
+                          </div>
                         </div>
                       </div>
                     ))}

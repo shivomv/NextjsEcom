@@ -11,7 +11,7 @@ cloudinary.config({
 
 /**
  * @desc    Upload an image to Cloudinary
- * @route   POST /api/upload
+ * @route   POST /api/admin/upload
  * @access  Private/Admin
  */
 export async function POST(request) {
@@ -92,7 +92,7 @@ export async function POST(request) {
 
 /**
  * @desc    Delete an image from Cloudinary
- * @route   DELETE /api/upload
+ * @route   DELETE /api/admin/upload
  * @access  Private/Admin
  */
 export async function DELETE(request) {
