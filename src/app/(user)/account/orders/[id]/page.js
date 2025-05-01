@@ -1101,7 +1101,7 @@ export default function OrderDetailPage({ params }) {
                   <div className="bg-gradient-to-r from-purple-100 to-pink-100 p-4 rounded-md mb-4">
                     <RazorpayButton
                       orderId={order._id}
-                      onSuccess={(data) => {
+                      onSuccess={() => {
                         // Refresh the order data after successful payment
                         setOrder({
                           ...order,
@@ -1132,13 +1132,13 @@ export default function OrderDetailPage({ params }) {
                   activeAction === 'return' ? 'bg-orange-50 border border-orange-200 text-orange-700' : ''
                 }`}>
                   {activeAction === 'cancel' && (
-                    <p>You can cancel your order below if it hasn't been shipped yet.</p>
+                    <p>You can cancel your order below if it hasn&apos;t been shipped yet.</p>
                   )}
                   {activeAction === 'review' && (
                     <p>You can write a review for this product now that it has been delivered.</p>
                   )}
                   {activeAction === 'return' && (
-                    <p>If you're not satisfied with your order, you can request a return below.</p>
+                    <p>If you&apos;re not satisfied with your order, you can request a return below.</p>
                   )}
                 </div>
               )}

@@ -331,7 +331,7 @@ export default function Home() {
               New Products Coming Soon
             </h3>
             <p className="text-gray-500 mb-6">
-              We're constantly adding new spiritual items to our collection.
+              We&apos;re constantly adding new spiritual items to our collection.
             </p>
           </div>
         )}
