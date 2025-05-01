@@ -9,6 +9,8 @@ import LoadingSpinner from '@/components/common/LoadingSpinner';
 import GeneralSettings from '@/components/admin/settings/GeneralSettings';
 import SocialMediaSettings from '@/components/admin/settings/SocialMediaSettings';
 import DeliveryAgenciesSettings from '@/components/admin/settings/DeliveryAgenciesSettings';
+import HeroSlidesSettings from '@/components/admin/settings/HeroSlidesSettings';
+import PromoBannerSettings from '@/components/admin/settings/PromoBannerSettings';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -115,7 +117,7 @@ export default function SettingsPage() {
       if (response.ok) {
         setSettings({
           ...settings,
-          ...data,
+          [data.tab]: data.data,
         });
         setSuccess('General settings saved successfully!');
       } else {
@@ -148,15 +150,13 @@ export default function SettingsPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          socialMedia: data,
-        }),
+        body: JSON.stringify(data),
       });
 
       if (response.ok) {
         setSettings({
           ...settings,
-          socialMedia: data,
+          [data.tab]: data.data,
         });
         setSuccess('Social media settings saved successfully!');
       } else {
@@ -177,14 +177,151 @@ export default function SettingsPage() {
     }
   };
 
-
-
-  // Handle delivery agency save
-  const handleDeliveryAgencySave = async (data, id = null) => {
+  // Handle hero slides settings save
+  const handleHeroSlidesSave = async (data) => {
     try {
       setIsSaving(true);
       setError(null);
       setSuccess(null);
+
+      const response = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        // Update the settings state with the new data
+        setSettings({
+          ...settings,
+          [data.tab]: data.data,
+        });
+        setSuccess('Hero slides saved successfully!');
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to save hero slides');
+      }
+    } catch (error) {
+      console.error('Error saving hero slides:', error);
+      setError('Failed to save hero slides. Please try again.');
+    } finally {
+      setIsSaving(false);
+      // Clear success message after 3 seconds
+      if (!error) {
+        setTimeout(() => {
+          setSuccess(null);
+        }, 3000);
+      }
+    }
+  };
+
+  // Handle promotional banner settings save
+  const handlePromoBannerSave = async (data) => {
+    try {
+      setIsSaving(true);
+      setError(null);
+      setSuccess(null);
+
+      const response = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        // Update the settings state with the new data
+        setSettings({
+          ...settings,
+          [data.tab]: data.data,
+        });
+        setSuccess('Promotional banner settings saved successfully!');
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to save promotional banner settings');
+      }
+    } catch (error) {
+      console.error('Error saving promotional banner settings:', error);
+      setError('Failed to save promotional banner settings. Please try again.');
+    } finally {
+      setIsSaving(false);
+      // Clear success message after 3 seconds
+      if (!error) {
+        setTimeout(() => {
+          setSuccess(null);
+        }, 3000);
+      }
+    }
+  };
+
+  // Handle hero section settings save
+  const handleHeroSectionSave = async (data) => {
+    try {
+      setIsSaving(true);
+      setError(null);
+      setSuccess(null);
+
+      // Create an array of settings objects with the hero section data
+      const heroSectionSettings = [
+        { key: 'heroTitle', value: data.heroTitle, group: 'hero', isPublic: true },
+        { key: 'heroSubtitle', value: data.heroSubtitle, group: 'hero', isPublic: true },
+        { key: 'heroButtonText', value: data.heroButtonText, group: 'hero', isPublic: true },
+        { key: 'heroButtonLink', value: data.heroButtonLink, group: 'hero', isPublic: true },
+        { key: 'heroImage', value: data.heroImage, group: 'hero', isPublic: true },
+        { key: 'heroImageData', value: data.heroImageData, group: 'hero', isPublic: true },
+        { key: 'promoTitle', value: data.promoTitle, group: 'hero', isPublic: true },
+        { key: 'promoSubtitle', value: data.promoSubtitle, group: 'hero', isPublic: true },
+        { key: 'promoButtonText', value: data.promoButtonText, group: 'hero', isPublic: true },
+        { key: 'promoButtonLink', value: data.promoButtonLink, group: 'hero', isPublic: true },
+        { key: 'promoImage', value: data.promoImage, group: 'hero', isPublic: true },
+        { key: 'promoImageData', value: data.promoImageData, group: 'hero', isPublic: true },
+      ];
+
+      const response = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(heroSectionSettings),
+      });
+
+      if (response.ok) {
+        setSettings({
+          ...settings,
+          ...data,
+        });
+        setSuccess('Hero section settings saved successfully!');
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to save hero section settings');
+      }
+    } catch (error) {
+      console.error('Error saving hero section settings:', error);
+      setError('Failed to save hero section settings. Please try again.');
+    } finally {
+      setIsSaving(false);
+      // Clear success message after 3 seconds
+      if (!error) {
+        setTimeout(() => {
+          setSuccess(null);
+        }, 3000);
+      }
+    }
+  };
+
+
+
+  // Handle delivery agency save
+  const handleDeliveryAgencySave = async (data) => {
+    try {
+      setIsSaving(true);
+      setError(null);
+      setSuccess(null);
+
+      const { agency, id } = data.data;
 
       let response;
       if (id) {
@@ -194,7 +331,7 @@ export default function SettingsPage() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(data),
+          body: JSON.stringify(agency),
         });
       } else {
         // Create new delivery agency
@@ -203,7 +340,7 @@ export default function SettingsPage() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(data),
+          body: JSON.stringify(agency),
         });
       }
 
@@ -325,6 +462,27 @@ export default function SettingsPage() {
           >
             Social Media
           </button>
+
+          <button
+            onClick={() => setActiveTab('slides')}
+            className={`py-4 px-6 text-sm font-medium ${
+              activeTab === 'slides'
+                ? 'border-b-2 border-primary text-primary'
+                : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Hero Slides
+          </button>
+          <button
+            onClick={() => setActiveTab('promo')}
+            className={`py-4 px-6 text-sm font-medium ${
+              activeTab === 'promo'
+                ? 'border-b-2 border-primary text-primary'
+                : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Promotional Banner
+          </button>
           <button
             onClick={() => setActiveTab('delivery')}
             className={`py-4 px-6 text-sm font-medium ${
@@ -351,6 +509,24 @@ export default function SettingsPage() {
           <SocialMediaSettings
             socialMedia={settings.socialMedia}
             onSave={handleSocialMediaSave}
+            isSaving={isSaving}
+          />
+        )}
+
+
+
+        {activeTab === 'slides' && (
+          <HeroSlidesSettings
+            settings={settings}
+            onSave={handleHeroSlidesSave}
+            isSaving={isSaving}
+          />
+        )}
+
+        {activeTab === 'promo' && (
+          <PromoBannerSettings
+            settings={settings}
+            onSave={handlePromoBannerSave}
             isSaving={isSaving}
           />
         )}

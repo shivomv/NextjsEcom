@@ -34,7 +34,12 @@ export default function GeneralSettings({ settings, onSave, isSaving }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave(formData);
+    // Use the new structured data format
+    onSave({
+      tab: 'general',
+      data: formData,
+      isPublic: true
+    });
   };
 
   return (

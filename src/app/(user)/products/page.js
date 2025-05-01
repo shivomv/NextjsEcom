@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import ProductCard from '@/components/products/ProductCard';
 import ProductFilter from '@/components/products/ProductFilter';
 import Pagination from '@/components/common/Pagination';
@@ -119,10 +118,6 @@ export default function ProductsPage() {
 
   const handleSortChange = (sort) => {
     setSortOption(sort);
-  };
-
-  const handleSearchSubmit = (term) => {
-    setSearchTerm(term);
   };
 
   // Build breadcrumb items

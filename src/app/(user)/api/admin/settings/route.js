@@ -22,6 +22,7 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const group = searchParams.get('group');
     const isPublic = searchParams.get('isPublic');
+    const tab = searchParams.get('tab');
 
     // Build query
     const query = {};
@@ -33,9 +34,17 @@ export async function GET(request) {
     } else if (isPublic === 'false') {
       query.isPublic = false;
     }
+    if (tab) {
+      query.key = tab;
+    }
 
     // Get settings
     const settings = await Setting.find(query);
+
+    // Return a specific tab's data if requested
+    if (tab && settings.length === 1) {
+      return NextResponse.json(settings[0].value);
+    }
 
     // Convert to key-value object if requested
     if (searchParams.get('format') === 'object') {
@@ -72,30 +81,56 @@ export async function POST(request) {
     await dbConnect();
     const data = await request.json();
 
-    if (!Array.isArray(data) && typeof data === 'object') {
-      // Handle single object with multiple settings
+    // New structured format: { tab: 'tabName', data: {...} }
+    if (data.tab && data.data) {
+      // Handle structured tab-based settings
+      const { tab, data: tabData, isPublic = true } = data;
+
+      // Find existing setting or create new one
+      const existingSetting = await Setting.findOne({ key: tab });
+
+      if (existingSetting) {
+        // Update existing setting
+        existingSetting.value = tabData;
+        existingSetting.group = tab;
+        existingSetting.isPublic = isPublic;
+
+        const result = await existingSetting.save();
+        return NextResponse.json(result);
+      } else {
+        // Create new setting
+        const result = await Setting.create({
+          key: tab,
+          value: tabData,
+          group: tab,
+          isPublic: isPublic,
+        });
+        return NextResponse.json(result);
+      }
+    } else if (!Array.isArray(data) && typeof data === 'object') {
+      // Handle legacy format: single object with multiple settings
       const settingsArray = Object.entries(data).map(([key, value]) => ({
         key,
         value,
         group: 'general',
         isPublic: true,
       }));
-      
+
       // Process each setting
       const results = await Promise.all(
         settingsArray.map(async (setting) => {
           const { key, value, group, isPublic, description } = setting;
-          
+
           // Find existing setting or create new one
           const existingSetting = await Setting.findOne({ key });
-          
+
           if (existingSetting) {
             // Update existing setting
             existingSetting.value = value;
             if (group) existingSetting.group = group;
             if (typeof isPublic !== 'undefined') existingSetting.isPublic = isPublic;
             if (description) existingSetting.description = description;
-            
+
             return await existingSetting.save();
           } else {
             // Create new setting
@@ -109,24 +144,24 @@ export async function POST(request) {
           }
         })
       );
-      
+
       return NextResponse.json(results);
     } else if (Array.isArray(data)) {
-      // Handle array of settings
+      // Handle legacy format: array of settings
       const results = await Promise.all(
         data.map(async (setting) => {
           const { key, value, group, isPublic, description } = setting;
-          
+
           // Find existing setting or create new one
           const existingSetting = await Setting.findOne({ key });
-          
+
           if (existingSetting) {
             // Update existing setting
             existingSetting.value = value;
             if (group) existingSetting.group = group;
             if (typeof isPublic !== 'undefined') existingSetting.isPublic = isPublic;
             if (description) existingSetting.description = description;
-            
+
             return await existingSetting.save();
           } else {
             // Create new setting
@@ -140,7 +175,7 @@ export async function POST(request) {
           }
         })
       );
-      
+
       return NextResponse.json(results);
     } else {
       return NextResponse.json(

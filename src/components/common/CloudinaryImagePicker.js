@@ -17,11 +17,15 @@ export default function CloudinaryImagePicker({
   label = 'Image',
   required = false,
   errorMessage = '',
+  id = '',
 }) {
   const { user } = useAuth();
   const [previewImage, setPreviewImage] = useState(initialImage);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState(errorMessage);
+
+  // Generate a unique ID for this component instance
+  const uniqueId = id || `image-upload-${label.replace(/\s+/g, '-').toLowerCase()}-${Math.random().toString(36).substring(2, 9)}`;
 
   // Handle image change
   const handleImageChange = async (e) => {
@@ -108,12 +112,12 @@ export default function CloudinaryImagePicker({
             </div>
           )}
         </div>
-        <label htmlFor={`image-upload-${label.replace(/\s+/g, '-').toLowerCase()}`} className={`ml-5 bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary cursor-pointer ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+        <label htmlFor={uniqueId} className={`ml-5 bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary cursor-pointer ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
           {isUploading ? 'Uploading...' : 'Change'}
         </label>
         <input
-          id={`image-upload-${label.replace(/\s+/g, '-').toLowerCase()}`}
-          name={`image-upload-${label.replace(/\s+/g, '-').toLowerCase()}`}
+          id={uniqueId}
+          name={uniqueId}
           type="file"
           accept="image/*"
           onChange={handleImageChange}

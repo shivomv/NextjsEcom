@@ -14,8 +14,7 @@ const settingSchema = new mongoose.Schema(
     },
     group: {
       type: String,
-      enum: ['general', 'payment', 'notification', 'social', 'cloudinary', 'other'],
-      default: 'other',
+      required: true,
     },
     isPublic: {
       type: Boolean,

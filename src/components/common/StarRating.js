@@ -12,10 +12,10 @@ import React from 'react';
  * @param {boolean} props.showCount - Whether to show the review count
  * @param {number} props.count - The number of reviews
  */
-export default function StarRating({ 
-  rating = 0, 
-  maxRating = 5, 
-  size = 'md', 
+export default function StarRating({
+  rating = 0,
+  maxRating = 5,
+  size = 'md',
   color = 'text-gradient-pink-orange',
   showCount = false,
   count = 0
@@ -90,11 +90,16 @@ export default function StarRating({
         ))}
       </div>
 
-      {/* Review count */}
-      {showCount && (
-        <span className="text-xs text-text-muted ml-1 font-medium">
-          ({count} {count === 1 ? 'review' : 'reviews'})
-        </span>
+      {/* Rating value and review count */}
+      {showCount && count > 0 && (
+        <div className="flex items-center">
+          <span className="text-xs text-gray-700 ml-1 font-medium">
+            {rating.toFixed(1)}
+          </span>
+          <span className="text-xs text-gray-500 ml-1">
+            ({count} {count === 1 ? 'review' : 'reviews'})
+          </span>
+        </div>
       )}
     </div>
   );

@@ -1,17 +1,18 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import Link from 'next/link';
-import Image from 'next/image';
-import { productAPI } from '@/services/api';
-import { useCart } from '@/context/CartContext';
-import Breadcrumb from '@/components/common/Breadcrumb';
-import LoadingSpinner from '@/components/common/LoadingSpinner';
-import ProductCard from '@/components/products/ProductCard';
-import StarRating from '@/components/common/StarRating';
-import ReviewList from '@/components/products/ReviewList';
-import ReviewForm from '@/components/products/ReviewForm';
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
+import { productAPI } from "@/services/api";
+import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
+import Breadcrumb from "@/components/common/Breadcrumb";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
+import ProductCard from "@/components/products/ProductCard";
+import StarRating from "@/components/common/StarRating";
+import ReviewList from "@/components/products/ReviewList";
+import ReviewForm from "@/components/products/ReviewForm";
 
 export default function ProductDetailPage() {
   const { slug } = useParams();
@@ -23,8 +24,12 @@ export default function ProductDetailPage() {
   const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
-  const [activeTab, setActiveTab] = useState('description');
+  const [activeTab, setActiveTab] = useState("description");
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [reviewToEdit, setReviewToEdit] = useState(null);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [hasUserReviewed, setHasUserReviewed] = useState(false);
+  const { user, isAuthenticated } = useAuth();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -44,12 +49,14 @@ export default function ProductDetailPage() {
 
         // Fetch related products
         if (productData._id) {
-          const relatedData = await productAPI.getRelatedProducts(productData._id);
+          const relatedData = await productAPI.getRelatedProducts(
+            productData._id
+          );
           setRelatedProducts(relatedData);
         }
       } catch (error) {
         setError(error.toString());
-        console.error('Error fetching product:', error);
+        console.error("Error fetching product:", error);
       } finally {
         setLoading(false);
       }
@@ -59,6 +66,30 @@ export default function ProductDetailPage() {
       fetchProduct();
     }
   }, [slug]);
+
+  // Check if the user has already reviewed this product
+  useEffect(() => {
+    const checkUserReview = async () => {
+      if (!isAuthenticated || !user || !product) {
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `/api/products/${product._id}/user-review`
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          setHasUserReviewed(data.hasReviewed);
+        }
+      } catch (err) {
+        console.error("Error checking user review:", err);
+      }
+    };
+
+    checkUserReview();
+  }, [isAuthenticated, user, product]);
 
   const handleQuantityChange = (e) => {
     const value = parseInt(e.target.value);
@@ -81,8 +112,13 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = () => {
     // Prevent adding out-of-stock items (stock is undefined, null, 0, or negative)
-    if (!product || product.stock === undefined || product.stock === null || product.stock <= 0) {
-      console.error('Cannot add out-of-stock product to cart:', product?.name);
+    if (
+      !product ||
+      product.stock === undefined ||
+      product.stock === null ||
+      product.stock <= 0
+    ) {
+      console.error("Cannot add out-of-stock product to cart:", product?.name);
       return;
     }
 
@@ -91,9 +127,12 @@ export default function ProductDetailPage() {
       const success = addToCart(product, quantity);
 
       // Reset button state after animation
-      setTimeout(() => {
-        setIsAddingToCart(false);
-      }, success ? 1000 : 300); // Shorter animation if failed
+      setTimeout(
+        () => {
+          setIsAddingToCart(false);
+        },
+        success ? 1000 : 300
+      ); // Shorter animation if failed
     }
   };
 
@@ -104,8 +143,8 @@ export default function ProductDetailPage() {
 
   // Build breadcrumb items
   const breadcrumbItems = [
-    { label: 'Home', href: '/' },
-    { label: 'Products', href: '/products' },
+    { label: "Home", href: "/" },
+    { label: "Products", href: "/products" },
   ];
 
   if (product) {
@@ -137,7 +176,10 @@ export default function ProductDetailPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="bg-red-100 text-red-700 p-4 rounded-md">
           <p>Error loading product: {error}</p>
-          <Link href="/products" className="text-primary hover:underline mt-2 inline-block">
+          <Link
+            href="/products"
+            className="text-primary hover:underline mt-2 inline-block"
+          >
             Return to Products
           </Link>
         </div>
@@ -150,7 +192,10 @@ export default function ProductDetailPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="bg-yellow-100 text-yellow-800 p-4 rounded-md">
           <p>Product not found.</p>
-          <Link href="/products" className="text-primary hover:underline mt-2 inline-block">
+          <Link
+            href="/products"
+            className="text-primary hover:underline mt-2 inline-block"
+          >
             Return to Products
           </Link>
         </div>
@@ -193,7 +238,9 @@ export default function ProductDetailPage() {
                       key={index}
                       onClick={() => setActiveImage(index)}
                       className={`relative w-16 h-16 rounded-md overflow-hidden border-2 ${
-                        activeImage === index ? 'border-primary' : 'border-transparent'
+                        activeImage === index
+                          ? "border-primary"
+                          : "border-transparent"
                       }`}
                     >
                       <Image
@@ -211,7 +258,9 @@ export default function ProductDetailPage() {
 
             {/* Product Info */}
             <div className="md:w-1/2 px-4">
-              <h1 className="text-2xl md:text-3xl font-bold mb-2">{product.name}</h1>
+              <h1 className="text-2xl md:text-3xl font-bold mb-2">
+                {product.name}
+              </h1>
               <p className="text-lg text-gray-600 mb-4">{product.hindiName}</p>
 
               {/* Price */}
@@ -219,20 +268,26 @@ export default function ProductDetailPage() {
                 <span className="text-2xl font-bold text-primary">
                   {formatPrice(product.price)}
                 </span>
-                {product.comparePrice > 0 && product.comparePrice > product.price && (
-                  <>
-                    <span className="text-lg text-gray-500 line-through ml-2">
-                      {formatPrice(product.comparePrice)}
-                    </span>
-                    <span className="ml-2 bg-primary text-white text-sm px-2 py-1 rounded">
-                      {Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)}% OFF
-                    </span>
-                  </>
-                )}
+                {product.mrp > 0 &&
+                  product.mrp > product.price && (
+                    <>
+                      <span className="text-lg text-gray-500 line-through ml-2">
+                        {formatPrice(product.mrp)}
+                      </span>
+                      <span className="ml-2 bg-primary text-white text-sm px-2 py-1 rounded">
+                        {Math.round(
+                          ((product.mrp - product.price) /
+                            product.mrp) *
+                            100
+                        )}
+                        % OFF
+                      </span>
+                    </>
+                  )}
               </div>
 
               {/* Rating */}
-              {product.ratings > 0 && (
+              {product.ratings > 0 && product.numReviews > 0 && (
                 <div className="mb-4">
                   <StarRating
                     rating={product.ratings}
@@ -259,8 +314,19 @@ export default function ProductDetailPage() {
                 {/* Low stock warning */}
                 {product.stock > 0 && product.stock <= 5 && (
                   <p className="text-sm text-amber-600 mt-2 flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 mr-1"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                      />
                     </svg>
                     Only {product.stock} left in stock - order soon!
                   </p>
@@ -292,7 +358,10 @@ export default function ProductDetailPage() {
               {/* Quantity Selector */}
               {product.stock > 0 && (
                 <div className="mb-6">
-                  <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="quantity"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Quantity
                   </label>
                   <div className="flex">
@@ -331,8 +400,19 @@ export default function ProductDetailPage() {
                     disabled
                     className="bg-red-100 border-2 border-red-600 text-red-600 px-6 py-3 rounded-md flex-1 flex items-center justify-center cursor-not-allowed"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 mr-2"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                     OUT OF STOCK
                   </button>
@@ -342,21 +422,43 @@ export default function ProductDetailPage() {
                     disabled={isAddingToCart}
                     className={`${
                       isAddingToCart
-                        ? 'bg-green-500'
-                        : 'bg-primary hover:bg-primary-dark'
+                        ? "bg-green-500"
+                        : "bg-primary hover:bg-primary-dark"
                     } text-white px-6 py-3 rounded-md transition-colors flex-1 flex items-center justify-center`}
                   >
                     {isAddingToCart ? (
                       <>
-                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                        <svg
+                          className="w-5 h-5 mr-2"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M5 13l4 4L19 7"
+                          ></path>
                         </svg>
                         Added to Cart
                       </>
                     ) : (
                       <>
-                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        <svg
+                          className="w-5 h-5 mr-2"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                          ></path>
                         </svg>
                         Add to Cart
                       </>
@@ -364,11 +466,20 @@ export default function ProductDetailPage() {
                   </button>
                 )}
 
-                <button
-                  className="hidden sm:block border border-primary text-primary px-4 py-3 rounded-md hover:bg-primary hover:text-white transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                <button className="hidden sm:block border border-primary text-primary px-4 py-3 rounded-md hover:bg-primary hover:text-white transition-colors">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                    ></path>
                   </svg>
                 </button>
               </div>
@@ -376,14 +487,38 @@ export default function ProductDetailPage() {
               {/* Delivery & Returns */}
               <div className="border-t border-gray-200 pt-4">
                 <div className="flex items-center mb-2">
-                  <svg className="w-5 h-5 text-primary mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
+                  <svg
+                    className="w-5 h-5 text-primary mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+                    ></path>
                   </svg>
-                  <span className="text-sm">Free shipping on orders over ₹500</span>
+                  <span className="text-sm">
+                    Free shipping on orders over ₹500
+                  </span>
                 </div>
                 <div className="flex items-center">
-                  <svg className="w-5 h-5 text-primary mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z"></path>
+                  <svg
+                    className="w-5 h-5 text-primary mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z"
+                    ></path>
                   </svg>
                   <span className="text-sm">7-day return policy</span>
                 </div>
@@ -397,43 +532,43 @@ export default function ProductDetailPage() {
           <div className="border-b border-gray-200">
             <nav className="flex flex-wrap">
               <button
-                onClick={() => setActiveTab('description')}
+                onClick={() => setActiveTab("description")}
                 className={`px-4 py-3 text-sm font-medium ${
-                  activeTab === 'description'
-                    ? 'border-b-2 border-primary text-primary'
-                    : 'text-gray-500 hover:text-gray-700'
+                  activeTab === "description"
+                    ? "border-b-2 border-primary text-primary"
+                    : "text-gray-500 hover:text-gray-700"
                 }`}
               >
                 Description
               </button>
               {product.spiritualSignificance && (
                 <button
-                  onClick={() => setActiveTab('spiritual')}
+                  onClick={() => setActiveTab("spiritual")}
                   className={`px-4 py-3 text-sm font-medium ${
-                    activeTab === 'spiritual'
-                      ? 'border-b-2 border-primary text-primary'
-                      : 'text-gray-500 hover:text-gray-700'
+                    activeTab === "spiritual"
+                      ? "border-b-2 border-primary text-primary"
+                      : "text-gray-500 hover:text-gray-700"
                   }`}
                 >
                   Spiritual Significance
                 </button>
               )}
               <button
-                onClick={() => setActiveTab('reviews')}
+                onClick={() => setActiveTab("reviews")}
                 className={`px-4 py-3 text-sm font-medium ${
-                  activeTab === 'reviews'
-                    ? 'border-b-2 border-primary text-primary'
-                    : 'text-gray-500 hover:text-gray-700'
+                  activeTab === "reviews"
+                    ? "border-b-2 border-primary text-primary"
+                    : "text-gray-500 hover:text-gray-700"
                 }`}
               >
                 Reviews ({product.numReviews})
               </button>
               <button
-                onClick={() => setActiveTab('shipping')}
+                onClick={() => setActiveTab("shipping")}
                 className={`px-4 py-3 text-sm font-medium ${
-                  activeTab === 'shipping'
-                    ? 'border-b-2 border-primary text-primary'
-                    : 'text-gray-500 hover:text-gray-700'
+                  activeTab === "shipping"
+                    ? "border-b-2 border-primary text-primary"
+                    : "text-gray-500 hover:text-gray-700"
                 }`}
               >
                 Shipping & Returns
@@ -442,84 +577,161 @@ export default function ProductDetailPage() {
           </div>
 
           <div className="p-4 md:p-6">
-            {activeTab === 'description' && (
+            {activeTab === "description" && (
               <div>
                 <h2 className="text-lg font-bold mb-4">Product Description</h2>
                 <div className="prose max-w-none">
                   <p className="whitespace-pre-line">{product.description}</p>
                 </div>
 
-                {/* Product Specifications */}
-                {(product.materials?.length > 0 || product.dimensions || product.weight?.value) && (
+                {/* Product Properties */}
+                {product.specifications?.length > 0 && (
                   <div className="mt-6">
-                    <h3 className="text-md font-bold mb-3">Specifications</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {product.materials?.length > 0 && (
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-700">Materials</h4>
-                          <p className="text-gray-600">{product.materials.join(', ')}</p>
+                    <h3 className="text-md font-bold mb-3">Properties</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-3 text-sm">
+                      {product.specifications.map((specification, index) => (
+                        <div key={index}>
+                          <h4 className="font-medium text-gray-700 capitalize">
+                            {specification.name}
+                          </h4>
+                          <p className="text-gray-600">{specification.value}</p>
                         </div>
-                      )}
-
-                      {product.dimensions && (
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-700">Dimensions</h4>
-                          <p className="text-gray-600">
-                            {product.dimensions.length && product.dimensions.width && product.dimensions.height
-                              ? `${product.dimensions.length} × ${product.dimensions.width} × ${product.dimensions.height} ${product.dimensions.unit || 'cm'}`
-                              : 'Dimensions not specified'}
-                          </p>
-                        </div>
-                      )}
-
-                      {product.weight?.value && (
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-700">Weight</h4>
-                          <p className="text-gray-600">
-                            {`${product.weight.value} ${product.weight.unit || 'g'}`}
-                          </p>
-                        </div>
-                      )}
+                      ))}
                     </div>
                   </div>
                 )}
               </div>
             )}
 
-            {activeTab === 'spiritual' && product.spiritualSignificance && (
+            {activeTab === "spiritual" && product.spiritualSignificance && (
               <div>
-                <h2 className="text-lg font-bold mb-4">Spiritual Significance</h2>
+                <h2 className="text-lg font-bold mb-4">
+                  Spiritual Significance
+                </h2>
                 <div className="prose max-w-none">
-                  <p className="whitespace-pre-line">{product.spiritualSignificance}</p>
+                  <p className="whitespace-pre-line">
+                    {product.spiritualSignificance}
+                  </p>
                 </div>
               </div>
             )}
 
-            {activeTab === 'reviews' && (
+            {activeTab === "reviews" && (
               <div>
                 <h2 className="text-lg font-bold mb-4">Customer Reviews</h2>
 
                 {/* Display reviews */}
-                <ReviewList productId={product._id} />
+                <ReviewList
+                  productId={product._id}
+                  onEditReview={(review) => {
+                    setReviewToEdit(review);
+                    setShowReviewForm(true);
+                    // Scroll to review form
+                    document
+                      .getElementById("review-form")
+                      .scrollIntoView({ behavior: "smooth" });
+                  }}
+                />
+
+                {/* Write a Review button - only show if user hasn't already reviewed */}
+                {isAuthenticated && !hasUserReviewed && (
+                  <div className="mt-6 mb-6 flex justify-center">
+                    <button
+                      onClick={() => {
+                        setReviewToEdit(null);
+                        setShowReviewForm(!showReviewForm);
+                        if (!showReviewForm) {
+                          // Scroll to review form when showing it
+                          setTimeout(() => {
+                            document
+                              .getElementById("review-form")
+                              .scrollIntoView({ behavior: "smooth" });
+                          }, 100);
+                        }
+                      }}
+                      className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark transition-colors flex items-center"
+                    >
+                      {showReviewForm ? (
+                        <>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5 mr-2"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                          Hide Review Form
+                        </>
+                      ) : (
+                        <>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5 mr-2"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                            />
+                          </svg>
+                          Write a Review
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
 
                 {/* Review form */}
-                <div className="mt-8">
-                  <ReviewForm productId={product._id} />
+                <div id="review-form" className="mt-4">
+                  <ReviewForm
+                    productId={product._id}
+                    reviewToEdit={reviewToEdit}
+                    initialShowForm={showReviewForm}
+                    onReviewUpdated={(review) => {
+                      // Clear the review being edited after update
+                      setReviewToEdit(null);
+                      setShowReviewForm(false);
+
+                      // Update the hasUserReviewed state
+                      setHasUserReviewed(true);
+
+                      // Refresh the reviews list
+                      setTimeout(() => {
+                        router.refresh();
+                      }, 1000);
+                    }}
+                  />
                 </div>
               </div>
             )}
 
-            {activeTab === 'shipping' && (
+            {activeTab === "shipping" && (
               <div>
                 <h2 className="text-lg font-bold mb-4">Shipping & Returns</h2>
 
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-md font-medium mb-2">Shipping Information</h3>
+                    <h3 className="text-md font-medium mb-2">
+                      Shipping Information
+                    </h3>
                     <ul className="list-disc pl-5 text-gray-700 space-y-1">
                       <li>Free shipping on orders above ₹500</li>
                       <li>Standard shipping: 3-5 business days</li>
-                      <li>Express shipping: 1-2 business days (additional charges apply)</li>
+                      <li>
+                        Express shipping: 1-2 business days (additional charges
+                        apply)
+                      </li>
                       <li>We ship to all major cities across India</li>
                     </ul>
                   </div>
@@ -529,8 +741,13 @@ export default function ProductDetailPage() {
                     <ul className="list-disc pl-5 text-gray-700 space-y-1">
                       <li>Returns accepted within 7 days of delivery</li>
                       <li>Item must be unused and in original packaging</li>
-                      <li>Contact our customer service team to initiate a return</li>
-                      <li>Refunds will be processed within 5-7 business days after receiving the returned item</li>
+                      <li>
+                        Contact our customer service team to initiate a return
+                      </li>
+                      <li>
+                        Refunds will be processed within 5-7 business days after
+                        receiving the returned item
+                      </li>
                     </ul>
                   </div>
                 </div>
@@ -545,7 +762,10 @@ export default function ProductDetailPage() {
             <h2 className="text-2xl font-bold mb-6">Related Products</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {relatedProducts.map((relatedProduct) => (
-                <ProductCard key={relatedProduct._id} product={relatedProduct} />
+                <ProductCard
+                  key={relatedProduct._id}
+                  product={relatedProduct}
+                />
               ))}
             </div>
           </div>

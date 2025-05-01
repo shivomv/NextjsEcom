@@ -441,52 +441,83 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="bg-background min-h-screen py-12">
-      <div className="container mx-auto px-4">
+    <div className="bg-background min-h-screen py-6 sm:py-8 md:py-12">
+      <div className="container mx-auto px-3 sm:px-4">
         <Breadcrumb items={breadcrumbItems} />
 
-        <h1 className="text-3xl font-bold text-primary mb-8">Checkout</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-primary mb-6 sm:mb-8">Checkout</h1>
 
         {/* Checkout Progress */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between max-w-3xl mx-auto">
-            <div className={`flex flex-col items-center ${activeStep >= 1 ? 'text-primary' : 'text-gray-400'}`}>
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${activeStep >= 1 ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500'}`}>
-                1
+        <div className="mb-6 sm:mb-8">
+          <div className="flex items-center justify-between max-w-3xl mx-auto px-2">
+            {/* Mobile Progress Indicator */}
+            <div className="w-full md:hidden flex items-center justify-between">
+              <div className={`flex flex-col items-center ${activeStep >= 1 ? 'text-primary' : 'text-gray-400'}`}>
+                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center mb-1 ${activeStep >= 1 ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500'}`}>
+                  1
+                </div>
+                <span className="text-xs sm:text-sm font-medium">Ship</span>
               </div>
-              <span className="text-sm font-medium">Shipping</span>
+
+              <div className={`flex-1 h-1 mx-1 ${activeStep >= 2 ? 'bg-primary' : 'bg-gray-200'}`}></div>
+
+              <div className={`flex flex-col items-center ${activeStep >= 2 ? 'text-primary' : 'text-gray-400'}`}>
+                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center mb-1 ${activeStep >= 2 ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500'}`}>
+                  2
+                </div>
+                <span className="text-xs sm:text-sm font-medium">Pay</span>
+              </div>
+
+              <div className={`flex-1 h-1 mx-1 ${activeStep >= 3 ? 'bg-primary' : 'bg-gray-200'}`}></div>
+
+              <div className={`flex flex-col items-center ${activeStep >= 3 ? 'text-primary' : 'text-gray-400'}`}>
+                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center mb-1 ${activeStep >= 3 ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500'}`}>
+                  3
+                </div>
+                <span className="text-xs sm:text-sm font-medium">Review</span>
+              </div>
             </div>
 
-            <div className={`flex-1 h-1 mx-2 ${activeStep >= 2 ? 'bg-primary' : 'bg-gray-200'}`}></div>
-
-            <div className={`flex flex-col items-center ${activeStep >= 2 ? 'text-primary' : 'text-gray-400'}`}>
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${activeStep >= 2 ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500'}`}>
-                2
+            {/* Desktop Progress Indicator */}
+            <div className="hidden md:flex items-center justify-between w-full">
+              <div className={`flex flex-col items-center ${activeStep >= 1 ? 'text-primary' : 'text-gray-400'}`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${activeStep >= 1 ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500'}`}>
+                  1
+                </div>
+                <span className="text-sm font-medium">Shipping</span>
               </div>
-              <span className="text-sm font-medium">Payment</span>
-            </div>
 
-            <div className={`flex-1 h-1 mx-2 ${activeStep >= 3 ? 'bg-primary' : 'bg-gray-200'}`}></div>
+              <div className={`flex-1 h-1 mx-2 ${activeStep >= 2 ? 'bg-primary' : 'bg-gray-200'}`}></div>
 
-            <div className={`flex flex-col items-center ${activeStep >= 3 ? 'text-primary' : 'text-gray-400'}`}>
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${activeStep >= 3 ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500'}`}>
-                3
+              <div className={`flex flex-col items-center ${activeStep >= 2 ? 'text-primary' : 'text-gray-400'}`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${activeStep >= 2 ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500'}`}>
+                  2
+                </div>
+                <span className="text-sm font-medium">Payment</span>
               </div>
-              <span className="text-sm font-medium">Review</span>
+
+              <div className={`flex-1 h-1 mx-2 ${activeStep >= 3 ? 'bg-primary' : 'bg-gray-200'}`}></div>
+
+              <div className={`flex flex-col items-center ${activeStep >= 3 ? 'text-primary' : 'text-gray-400'}`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${activeStep >= 3 ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500'}`}>
+                  3
+                </div>
+                <span className="text-sm font-medium">Review</span>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-100 text-red-700 p-4 rounded-md mb-6">
+          <div className="bg-red-100 text-red-700 p-3 sm:p-4 rounded-md mb-4 sm:mb-6 text-sm sm:text-base">
             {error}
           </div>
         )}
 
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
           {/* Main Content */}
-          <div className="lg:w-2/3">
+          <div className="w-full lg:w-2/3">
             <div className="bg-white rounded-lg shadow-md overflow-hidden">
               {/* Shipping Step */}
               {activeStep === 1 && (
@@ -525,52 +556,52 @@ export default function CheckoutPage() {
           </div>
 
           {/* Order Summary */}
-          <div className="lg:w-1/3">
-            <div className="bg-white rounded-lg shadow-md overflow-hidden sticky top-24">
-              <div className="p-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold">Order Summary</h2>
+          <div className="w-full lg:w-1/3 mt-4 lg:mt-0">
+            <div className="bg-white rounded-lg shadow-md overflow-hidden lg:sticky lg:top-24">
+              <div className="p-3 sm:p-4 border-b border-gray-200">
+                <h2 className="text-base sm:text-lg font-semibold">Order Summary</h2>
               </div>
 
-              <div className="p-4">
+              <div className="p-3 sm:p-4">
                 {/* Items */}
-                <div className="space-y-3 mb-4">
+                <div className="space-y-2 sm:space-y-3 mb-3 sm:mb-4 max-h-40 sm:max-h-60 overflow-y-auto">
                   {cartItems.map((item) => (
-                    <div key={item.product} className="flex justify-between text-sm">
-                      <span>
+                    <div key={item.product} className="flex justify-between text-xs sm:text-sm">
+                      <span className="truncate pr-2 max-w-[70%]">
                         {item.name} × {item.qty}
                       </span>
-                      <span>{formatPrice(item.price * item.qty)}</span>
+                      <span className="flex-shrink-0">{formatPrice(item.price * item.qty)}</span>
                     </div>
                   ))}
                 </div>
 
                 {/* Subtotal */}
-                <div className="flex justify-between py-2 border-t border-gray-100">
+                <div className="flex justify-between py-2 border-t border-gray-100 text-sm">
                   <span>Subtotal</span>
                   <span>{formatPrice(itemsPrice)}</span>
                 </div>
 
                 {/* Shipping */}
-                <div className="flex justify-between py-2">
+                <div className="flex justify-between py-2 text-sm">
                   <span>Shipping</span>
                   <span>{shippingPrice === 0 ? 'Free' : formatPrice(shippingPrice)}</span>
                 </div>
 
                 {/* Tax */}
-                <div className="flex justify-between py-2">
+                <div className="flex justify-between py-2 text-sm">
                   <span>Tax (5% GST)</span>
                   <span>{formatPrice(taxPrice)}</span>
                 </div>
 
                 {/* Total */}
-                <div className="flex justify-between py-2 border-t border-gray-200 font-bold">
+                <div className="flex justify-between py-2 border-t border-gray-200 font-bold text-sm sm:text-base">
                   <span>Total</span>
                   <span>{formatPrice(totalPrice)}</span>
                 </div>
 
                 {/* Free Shipping Notice */}
                 {itemsPrice < 500 && (
-                  <div className="mt-4 bg-blue-50 text-blue-700 p-3 rounded-md text-sm">
+                  <div className="mt-3 sm:mt-4 bg-blue-50 text-blue-700 p-2 sm:p-3 rounded-md text-xs sm:text-sm">
                     <p>Orders over ₹500 qualify for FREE shipping!</p>
                   </div>
                 )}

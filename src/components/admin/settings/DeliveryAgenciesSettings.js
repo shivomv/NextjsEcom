@@ -37,7 +37,7 @@ export default function DeliveryAgenciesSettings({ deliveryAgencies, onSave, onD
 
   const handleNumberChange = (e) => {
     const { name, value } = e.target;
-    
+
     if (name.includes('.')) {
       const [parent, child] = name.split('.');
       setFormData({
@@ -73,7 +73,15 @@ export default function DeliveryAgenciesSettings({ deliveryAgencies, onSave, onD
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave(formData, editingId);
+    // Use the new structured data format
+    onSave({
+      tab: 'delivery',
+      data: {
+        agency: formData,
+        id: editingId
+      },
+      isPublic: true
+    });
     resetForm();
   };
 

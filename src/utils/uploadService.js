@@ -27,7 +27,7 @@ export const uploadFile = async (file, folder = config.cloudinary.defaultFolder,
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch('/api/upload', {
+    const response = await fetch('/api/admin/upload', {
       method: 'POST',
       headers,
       body: formData,
@@ -104,7 +104,7 @@ export const deleteFile = async (publicId, token = null) => {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch('/api/upload', {
+    const response = await fetch('/api/admin/upload', {
       method: 'DELETE',
       headers,
       body: JSON.stringify({ public_id: publicId }),

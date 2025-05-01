@@ -5,19 +5,69 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import StarRating from '@/components/common/StarRating';
 
-export default function ReviewForm({ productId }) {
+export default function ReviewForm({ productId, reviewToEdit, onReviewUpdated, initialShowForm = false }) {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
-  const [rating, setRating] = useState(5);
-  const [title, setTitle] = useState('');
-  const [comment, setComment] = useState('');
-  const [images, setImages] = useState([]);
+  const [rating, setRating] = useState(reviewToEdit ? reviewToEdit.rating : 5);
+  const [comment, setComment] = useState(reviewToEdit ? reviewToEdit.comment : '');
+  const [images, setImages] = useState(reviewToEdit ? reviewToEdit.images : []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [hasPurchased, setHasPurchased] = useState(false);
   const [checkingPurchase, setCheckingPurchase] = useState(true);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [isEditing, setIsEditing] = useState(!!reviewToEdit);
+  const [userReview, setUserReview] = useState(null);
+  const [showForm, setShowForm] = useState(initialShowForm || !!reviewToEdit);
+
+  // Update form when reviewToEdit or initialShowForm changes
+  useEffect(() => {
+    if (reviewToEdit) {
+      setRating(reviewToEdit.rating);
+      setComment(reviewToEdit.comment);
+      setImages(reviewToEdit.images || []);
+      setIsEditing(true);
+      setShowForm(true);
+    } else {
+      setRating(5);
+      setComment('');
+      setImages([]);
+      setIsEditing(false);
+      // Only update showForm if initialShowForm changes and we're not editing
+      if (!isEditing) {
+        setShowForm(initialShowForm);
+      }
+    }
+  }, [reviewToEdit, initialShowForm]);
+
+  // Check if user has already reviewed this product
+  useEffect(() => {
+    const checkUserReview = async () => {
+      if (!isAuthenticated || !user || !productId) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/products/${productId}/user-review`);
+
+        if (response.ok) {
+          const data = await response.json();
+          setUserReview(data.review);
+
+          // If user has already reviewed and we're not in edit mode,
+          // don't show the form by default
+          if (data.hasReviewed && !reviewToEdit) {
+            setShowForm(false);
+          }
+        }
+      } catch (err) {
+        console.error('Error checking user review:', err);
+      }
+    };
+
+    checkUserReview();
+  }, [isAuthenticated, user, productId, reviewToEdit]);
 
   // Check if user has purchased the product
   useEffect(() => {
@@ -96,7 +146,7 @@ export default function ReviewForm({ productId }) {
       });
 
       // Upload to Cloudinary through your API
-      const response = await fetch('/api/upload', {
+      const response = await fetch('/api/upload-public', {
         method: 'POST',
         body: formData,
       });
@@ -150,17 +200,26 @@ export default function ReviewForm({ productId }) {
       setError('');
       setSuccess('');
 
-      const response = await fetch(`/api/products/${productId}/reviews`, {
-        method: 'POST',
+      let url = `/api/products/${productId}/reviews`;
+      let method = 'POST';
+      let requestBody = {
+        rating,
+        comment,
+        images,
+      };
+
+      // If editing an existing review, use PUT method and include reviewId
+      if (isEditing && reviewToEdit) {
+        method = 'PUT';
+        requestBody.reviewId = reviewToEdit._id;
+      }
+
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          rating,
-          title,
-          comment,
-          images,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json();
@@ -169,10 +228,25 @@ export default function ReviewForm({ productId }) {
         throw new Error(data.message || 'Failed to submit review');
       }
 
-      setSuccess('Review submitted successfully!');
-      setComment('');
+      // Set success message based on whether creating or updating
+      setSuccess(isEditing ? 'Review updated successfully!' : 'Review submitted successfully!');
 
-      // Refresh the page to show the new review
+      // Clear the form and hide it if updating
+      if (isEditing) {
+        setShowForm(false);
+      } else {
+        // Clear the form if creating new
+        setComment('');
+        setRating(5);
+        setImages([]);
+      }
+
+      // Call the callback function if provided
+      if (onReviewUpdated) {
+        onReviewUpdated(data.review);
+      }
+
+      // Refresh the page to show the updated review
       setTimeout(() => {
         router.refresh();
       }, 1500);
@@ -219,9 +293,14 @@ export default function ReviewForm({ productId }) {
     );
   }
 
+  // If user has already reviewed and we're not in edit mode, don't show anything
+  if (userReview && !showForm && !isEditing) {
+    return null; // Don't show anything, as the review is already shown in the ReviewList
+  }
+
   return (
     <div className="bg-white p-4 rounded-md border border-gray-200">
-      <h3 className="text-lg font-bold mb-4">Write a Review</h3>
+      <h3 className="text-lg font-bold mb-4">{isEditing ? 'Edit Your Review' : 'Write a Review'}</h3>
 
       {error && (
         <div className="bg-red-50 text-red-700 p-3 rounded-md mb-4">
@@ -265,21 +344,6 @@ export default function ReviewForm({ productId }) {
               {rating} {rating === 1 ? 'Star' : 'Stars'}
             </span>
           </div>
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-            Review Title (Optional)
-          </label>
-          <input
-            id="title"
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary focus:border-primary"
-            placeholder="Summarize your experience in a few words..."
-            maxLength={100}
-          />
         </div>
 
         <div className="mb-4">
@@ -376,7 +440,7 @@ export default function ReviewForm({ productId }) {
               : 'bg-primary hover:bg-primary-dark'
           } text-white px-4 py-2 rounded-md transition-colors`}
         >
-          {loading ? 'Submitting...' : 'Submit Review'}
+          {loading ? 'Submitting...' : isEditing ? 'Update Review' : 'Submit Review'}
         </button>
       </form>
     </div>

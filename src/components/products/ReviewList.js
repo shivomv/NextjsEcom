@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import StarRating from '@/components/common/StarRating';
+import { useAuth } from '@/context/AuthContext';
 
-export default function ReviewList({ productId }) {
+export default function ReviewList({ productId, onEditReview }) {
+  const { user } = useAuth();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -112,8 +114,23 @@ export default function ReviewList({ productId }) {
             })}</span>
           </div>
 
-          {/* Helpful button */}
-          <div className="mt-3 flex items-center">
+          {/* Action buttons */}
+          <div className="mt-3 flex items-center space-x-4">
+            {/* Edit button - only show for the user's own reviews */}
+            {user && review.user.toString() === user._id && (
+              <button
+                onClick={() => onEditReview && onEditReview(review)}
+                className="text-sm bg-blue-600 text-white px-3 py-1 rounded-md flex items-center hover:bg-blue-700 transition-colors"
+                aria-label="Edit review"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Edit Review
+              </button>
+            )}
+
+            {/* Helpful button */}
             <button
               className="text-xs text-gray-500 flex items-center hover:text-primary transition-colors"
               aria-label="Mark as helpful"

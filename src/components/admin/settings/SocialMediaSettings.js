@@ -23,7 +23,12 @@ export default function SocialMediaSettings({ socialMedia, onSave, isSaving }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave(formData);
+    // Use the new structured data format
+    onSave({
+      tab: 'social',
+      data: formData,
+      isPublic: true
+    });
   };
 
   return (

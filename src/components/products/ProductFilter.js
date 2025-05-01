@@ -192,54 +192,7 @@ export default function ProductFilter({
             </form>
           </div>
 
-          {/* Availability */}
-          <div className="mb-4">
-            <h3 className="text-sm font-bold mb-2">Availability</h3>
-            <div className="space-y-2">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  className="form-checkbox h-4 w-4 text-primary rounded focus:ring-primary"
-                />
-                <span className="ml-2">In Stock</span>
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  className="form-checkbox h-4 w-4 text-primary rounded focus:ring-primary"
-                />
-                <span className="ml-2">Out of Stock</span>
-              </label>
-            </div>
-          </div>
 
-          {/* Festival Related */}
-          <div className="mb-4">
-            <h3 className="text-sm font-bold mb-2">Festival</h3>
-            <div className="space-y-2">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  className="form-checkbox h-4 w-4 text-primary rounded focus:ring-primary"
-                />
-                <span className="ml-2">Diwali</span>
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  className="form-checkbox h-4 w-4 text-primary rounded focus:ring-primary"
-                />
-                <span className="ml-2">Navratri</span>
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  className="form-checkbox h-4 w-4 text-primary rounded focus:ring-primary"
-                />
-                <span className="ml-2">Ganesh Chaturthi</span>
-              </label>
-            </div>
-          </div>
 
           {/* Reset Filters */}
           <button
@@ -256,7 +209,7 @@ export default function ProductFilter({
       </div>
 
       {/* Desktop filters - always visible on md and up */}
-      <div className="hidden md:block bg-white p-2 shadow-md rounded-md border border-gray-200">
+      <div className="hidden md:block bg-white p-4 shadow-md rounded-md border border-gray-200 sticky top-24 ">
         {/* Categories */}
         <div className="mb-6">
           <h3 className="text-md font-bold mb-3">Categories</h3>
