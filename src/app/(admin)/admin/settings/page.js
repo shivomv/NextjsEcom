@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import { adminAPI } from '@/services/api';
 
 // Settings components
 import GeneralSettings from '@/components/admin/settings/GeneralSettings';
@@ -67,24 +68,18 @@ export default function SettingsPage() {
       try {
         setIsLoading(true);
 
-        // Fetch general settings
-        const settingsResponse = await fetch('/api/admin/settings?format=object');
-        if (settingsResponse.ok) {
-          const settingsData = await settingsResponse.json();
-          if (Object.keys(settingsData).length > 0) {
-            setSettings(prevSettings => ({
-              ...prevSettings,
-              ...settingsData,
-            }));
-          }
+        // Fetch general settings using API service
+        const settingsData = await adminAPI.getSettings();
+        if (Object.keys(settingsData).length > 0) {
+          setSettings(prevSettings => ({
+            ...prevSettings,
+            ...settingsData,
+          }));
         }
 
-        // Fetch delivery agencies
-        const deliveryAgenciesResponse = await fetch('/api/admin/delivery-agencies');
-        if (deliveryAgenciesResponse.ok) {
-          const deliveryAgenciesData = await deliveryAgenciesResponse.json();
-          setDeliveryAgencies(deliveryAgenciesData);
-        }
+        // Fetch delivery agencies using API service
+        const deliveryAgenciesData = await adminAPI.getDeliveryAgencies();
+        setDeliveryAgencies(deliveryAgenciesData);
 
         setIsLoading(false);
       } catch (error) {
@@ -106,35 +101,18 @@ export default function SettingsPage() {
       setError(null);
       setSuccess(null);
 
-      const response = await fetch('/api/admin/settings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
+      await adminAPI.updateSettings(data);
+      setSettings({
+        ...settings,
+        [data.tab]: data.data,
       });
-
-      if (response.ok) {
-        setSettings({
-          ...settings,
-          [data.tab]: data.data,
-        });
-        setSuccess('General settings saved successfully!');
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to save settings');
-      }
+      setSuccess('General settings saved successfully!');
     } catch (error) {
       console.error('Error saving general settings:', error);
-      setError('Failed to save settings. Please try again.');
+      setError(typeof error === 'string' ? error : 'Failed to save settings. Please try again.');
     } finally {
       setIsSaving(false);
-      // Clear success message after 3 seconds
-      if (!error) {
-        setTimeout(() => {
-          setSuccess(null);
-        }, 3000);
-      }
+      setTimeout(() => setSuccess(null), 3000);
     }
   };
 
@@ -145,35 +123,18 @@ export default function SettingsPage() {
       setError(null);
       setSuccess(null);
 
-      const response = await fetch('/api/admin/settings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
+      await adminAPI.updateSettings(data);
+      setSettings({
+        ...settings,
+        [data.tab]: data.data,
       });
-
-      if (response.ok) {
-        setSettings({
-          ...settings,
-          [data.tab]: data.data,
-        });
-        setSuccess('Social media settings saved successfully!');
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to save social media settings');
-      }
+      setSuccess('Social media settings saved successfully!');
     } catch (error) {
       console.error('Error saving social media settings:', error);
-      setError('Failed to save social media settings. Please try again.');
+      setError(typeof error === 'string' ? error : 'Failed to save social media settings. Please try again.');
     } finally {
       setIsSaving(false);
-      // Clear success message after 3 seconds
-      if (!error) {
-        setTimeout(() => {
-          setSuccess(null);
-        }, 3000);
-      }
+      setTimeout(() => setSuccess(null), 3000);
     }
   };
 
@@ -184,36 +145,18 @@ export default function SettingsPage() {
       setError(null);
       setSuccess(null);
 
-      const response = await fetch('/api/admin/settings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
+      await adminAPI.updateSettings(data);
+      setSettings({
+        ...settings,
+        [data.tab]: data.data,
       });
-
-      if (response.ok) {
-        // Update the settings state with the new data
-        setSettings({
-          ...settings,
-          [data.tab]: data.data,
-        });
-        setSuccess('Hero slides saved successfully!');
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to save hero slides');
-      }
+      setSuccess('Hero slides saved successfully!');
     } catch (error) {
       console.error('Error saving hero slides:', error);
-      setError('Failed to save hero slides. Please try again.');
+      setError(typeof error === 'string' ? error : 'Failed to save hero slides. Please try again.');
     } finally {
       setIsSaving(false);
-      // Clear success message after 3 seconds
-      if (!error) {
-        setTimeout(() => {
-          setSuccess(null);
-        }, 3000);
-      }
+      setTimeout(() => setSuccess(null), 3000);
     }
   };
 
@@ -224,36 +167,18 @@ export default function SettingsPage() {
       setError(null);
       setSuccess(null);
 
-      const response = await fetch('/api/admin/settings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
+      await adminAPI.updateSettings(data);
+      setSettings({
+        ...settings,
+        [data.tab]: data.data,
       });
-
-      if (response.ok) {
-        // Update the settings state with the new data
-        setSettings({
-          ...settings,
-          [data.tab]: data.data,
-        });
-        setSuccess('Promotional banner settings saved successfully!');
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to save promotional banner settings');
-      }
+      setSuccess('Promotional banner settings saved successfully!');
     } catch (error) {
       console.error('Error saving promotional banner settings:', error);
-      setError('Failed to save promotional banner settings. Please try again.');
+      setError(typeof error === 'string' ? error : 'Failed to save promotional banner settings. Please try again.');
     } finally {
       setIsSaving(false);
-      // Clear success message after 3 seconds
-      if (!error) {
-        setTimeout(() => {
-          setSuccess(null);
-        }, 3000);
-      }
+      setTimeout(() => setSuccess(null), 3000);
     }
   };
 
@@ -323,52 +248,22 @@ export default function SettingsPage() {
 
       const { agency, id } = data.data;
 
-      let response;
-      if (id) {
-        // Update existing delivery agency
-        response = await fetch(`/api/admin/delivery-agencies/${id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(agency),
-        });
-      } else {
-        // Create new delivery agency
-        response = await fetch('/api/admin/delivery-agencies', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(agency),
-        });
-      }
+      const savedAgency = id 
+        ? await adminAPI.updateDeliveryAgency(id, agency)
+        : await adminAPI.createDeliveryAgency(agency);
 
-      if (response.ok) {
-        const savedAgency = await response.json();
-        if (id) {
-          // Update existing delivery agency in state
-          setDeliveryAgencies(deliveryAgencies.map(agency => agency._id === id ? savedAgency : agency));
-        } else {
-          // Add new delivery agency to state
-          setDeliveryAgencies([...deliveryAgencies, savedAgency]);
-        }
-        setSuccess('Delivery agency saved successfully!');
+      if (id) {
+        setDeliveryAgencies(deliveryAgencies.map(a => a._id === id ? savedAgency : a));
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to save delivery agency');
+        setDeliveryAgencies([...deliveryAgencies, savedAgency]);
       }
+      setSuccess('Delivery agency saved successfully!');
     } catch (error) {
       console.error('Error saving delivery agency:', error);
-      setError('Failed to save delivery agency. Please try again.');
+      setError(typeof error === 'string' ? error : 'Failed to save delivery agency. Please try again.');
     } finally {
       setIsSaving(false);
-      // Clear success message after 3 seconds
-      if (!error) {
-        setTimeout(() => {
-          setSuccess(null);
-        }, 3000);
-      }
+      setTimeout(() => setSuccess(null), 3000);
     }
   };
 
@@ -379,29 +274,15 @@ export default function SettingsPage() {
       setError(null);
       setSuccess(null);
 
-      const response = await fetch(`/api/admin/delivery-agencies/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        // Remove delivery agency from state
-        setDeliveryAgencies(deliveryAgencies.filter(agency => agency._id !== id));
-        setSuccess('Delivery agency deleted successfully!');
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete delivery agency');
-      }
+      await adminAPI.deleteDeliveryAgency(id);
+      setDeliveryAgencies(deliveryAgencies.filter(agency => agency._id !== id));
+      setSuccess('Delivery agency deleted successfully!');
     } catch (error) {
       console.error('Error deleting delivery agency:', error);
-      setError('Failed to delete delivery agency. Please try again.');
+      setError(typeof error === 'string' ? error : 'Failed to delete delivery agency. Please try again.');
     } finally {
       setIsSaving(false);
-      // Clear success message after 3 seconds
-      if (!error) {
-        setTimeout(() => {
-          setSuccess(null);
-        }, 3000);
-      }
+      setTimeout(() => setSuccess(null), 3000);
     }
   };
 

@@ -9,6 +9,7 @@ import PaymentStep from '@/components/checkout/PaymentStep';
 import ReviewStep from '@/components/checkout/ReviewStep';
 import Breadcrumb from '@/components/common/Breadcrumb';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import { orderAPI, paymentAPI } from '@/services/api';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -165,26 +166,10 @@ export default function CheckoutPage() {
 
     console.log('Sending order data:', JSON.stringify(orderData));
 
-    // Call API to create order
+    // Call API to create order using API service
     console.log('Sending order to API with token:', user.token ? 'Token exists' : 'No token');
-
-    const response = await fetch('/api/orders', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${user.token}`,
-      },
-      body: JSON.stringify(orderData),
-    });
-
-    console.log('Order API response status:', response.status);
-
-    const data = await response.json();
+    const data = await orderAPI.createOrder(orderData);
     console.log('Order API response data:', data);
-
-    if (!response.ok) {
-      throw new Error(data.message || data.error || 'Failed to create order');
-    }
 
     // For COD orders, redirect to success page
     console.log('Redirecting to success page for COD payment');
@@ -235,21 +220,8 @@ export default function CheckoutPage() {
     };
     sessionStorage.setItem('tempOrderData', JSON.stringify(tempOrderData));
 
-    // Call API to create Razorpay payment order (without creating an actual order in our database)
-    const response = await fetch('/api/payment/razorpay/create-payment', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${user.token}`,
-      },
-      body: JSON.stringify(paymentData),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || data.error || 'Failed to initialize payment');
-    }
+    // Call API to create Razorpay payment order using API service
+    const data = await paymentAPI.createPayment(paymentData);
 
     // Load Razorpay script if not already loaded
     if (!window.Razorpay) {
@@ -326,30 +298,16 @@ export default function CheckoutPage() {
 
           console.log('Creating order with data:', JSON.stringify(createOrderData));
 
-          // Call API to create order
-          const orderResponse = await fetch('/api/orders/create-after-payment', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${user.token}`,
-            },
-            body: JSON.stringify({
-              orderData: createOrderData,
-              paymentData: {
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature,
-              }
-            }),
+          // Call API to create order using API service
+          const responseData = await orderAPI.createOrderAfterPayment({
+            orderData: createOrderData,
+            paymentData: {
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+            }
           });
-
-          console.log('Order API response status:', orderResponse.status);
-          const responseData = await orderResponse.json();
           console.log('Order API response data:', responseData);
-
-          if (!orderResponse.ok) {
-            throw new Error(responseData.message || 'Failed to create order after payment');
-          }
 
           // Clear the temporary order data
           sessionStorage.removeItem('tempOrderData');

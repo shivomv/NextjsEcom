@@ -33,8 +33,8 @@ export async function POST(request) {
 
     // Check authentication
     const authResult = await authMiddleware(request);
-    if (authResult.status) {
-      return authResult;
+    if (!authResult.success) {
+      return authResult.status;
     }
 
     // Parse the multipart form data
@@ -119,3 +119,4 @@ export async function POST(request) {
     return handleApiError(error, 'Error uploading files');
   }
 }
+

@@ -12,8 +12,8 @@ export async function POST(request) {
   try {
     // Check authentication
     const authResult = await authMiddleware(request);
-    if (authResult.status) {
-      return authResult;
+    if (!authResult.success) {
+      return authResult.status;
     }
 
     await dbConnect();
@@ -154,8 +154,8 @@ export async function GET(request) {
   try {
     // Check authentication
     const authResult = await authMiddleware(request);
-    if (authResult.status) {
-      return authResult;
+    if (!authResult.success) {
+      return authResult.status;
     }
 
     await dbConnect();
@@ -214,3 +214,4 @@ export async function GET(request) {
     );
   }
 }
+

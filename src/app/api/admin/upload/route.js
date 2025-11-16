@@ -18,9 +18,9 @@ export async function POST(request) {
   try {
     // Check if admin
     const adminResult = await adminMiddleware(request);
-    if (adminResult.status) {
+    if (!adminResult.success) {
       console.log('Admin authentication failed:', adminResult.status);
-      return adminResult;
+      return adminResult.status;
     }
 
     console.log('Admin authentication successful');
@@ -99,9 +99,9 @@ export async function DELETE(request) {
   try {
     // Check if admin
     const adminResult = await adminMiddleware(request);
-    if (adminResult.status) {
+    if (!adminResult.success) {
       console.log('Admin authentication failed for DELETE:', adminResult.status);
-      return adminResult;
+      return adminResult.status;
     }
 
     console.log('Admin authentication successful for DELETE');
@@ -127,3 +127,4 @@ export async function DELETE(request) {
     );
   }
 }
+

@@ -208,6 +208,7 @@ export default function OrdersManagement() {
                 id: 'dateRange',
                 label: 'Date Range',
                 type: 'range',
+                inputType: 'date',
                 minPlaceholder: 'Start Date',
                 maxPlaceholder: 'End Date'
               }

@@ -10,6 +10,7 @@ import LoadingSpinner from "@/components/common/LoadingSpinner";
 import ProductCard from "@/components/products/ProductCard";
 import { ProductCardSkeleton, CategoryCardSkeleton, HeroSkeleton } from "@/components/common/Skeleton";
 import { ArrowLeftCircleIcon } from "@heroicons/react/24/outline";
+import { productAPI, settingsAPI } from "@/services/api";
 
 export default function Home() {
   const { parentCategories, loading: categoriesLoading } = useCategories();
@@ -39,39 +40,26 @@ export default function Home() {
   useEffect(() => {
     const fetchHeroData = async () => {
       try {
-        // Fetch hero data
-        const heroResponse = await fetch("/api/settings?tab=hero");
-        if (heroResponse.ok) {
-          const heroData = await heroResponse.json();
-          console.log("Fetched hero data:", heroData);
-
-          if (heroData && heroData.slides && Array.isArray(heroData.slides)) {
-            console.log("Found hero slides:", heroData.slides);
-            setHeroSlides(heroData.slides);
-          }
+        const settings = await settingsAPI.getPublicSettings();
+        
+        // Extract hero slides
+        const heroSettings = settings.find(s => s.key === 'hero');
+        if (heroSettings?.value?.slides && Array.isArray(heroSettings.value.slides)) {
+          setHeroSlides(heroSettings.value.slides);
         }
 
-        // Fetch promo data
-        const promoResponse = await fetch("/api/settings?tab=promo");
-        if (promoResponse.ok) {
-          const promoData = await promoResponse.json();
-          console.log("Fetched promo data:", promoData);
-
-          if (promoData) {
-            setHeroData((prevData) => ({
-              ...prevData,
-              promoTitle: promoData.promoTitle || prevData.promoTitle,
-              promoSubtitle: promoData.promoSubtitle || prevData.promoSubtitle,
-              promoButtonText:
-                promoData.promoButtonText || prevData.promoButtonText,
-              promoButtonLink:
-                promoData.promoButtonLink || prevData.promoButtonLink,
-              promoImage: promoData.promoImage || prevData.promoImage,
-            }));
-          }
+        // Extract promo data
+        const promoSettings = settings.find(s => s.key === 'promo');
+        if (promoSettings?.value) {
+          setHeroData((prevData) => ({
+            ...prevData,
+            promoTitle: promoSettings.value.promoTitle || prevData.promoTitle,
+            promoSubtitle: promoSettings.value.promoSubtitle || prevData.promoSubtitle,
+            promoButtonText: promoSettings.value.promoButtonText || prevData.promoButtonText,
+            promoButtonLink: promoSettings.value.promoButtonLink || prevData.promoButtonLink,
+            promoImage: promoSettings.value.promoImage || prevData.promoImage,
+          }));
         }
-
-        // No default slide - if no slides are found, the slider won't be shown
       } catch (error) {
         console.error("Error fetching hero section data:", error);
       }
@@ -85,14 +73,8 @@ export default function Home() {
     const fetchFeaturedProducts = async () => {
       try {
         setLoading(true);
-        const response = await fetch("/api/products/featured?limit=4");
-        if (response.ok) {
-          const data = await response.json();
-          setFeaturedProducts(data || []);
-        } else {
-          console.error("Failed to fetch featured products:", response.status);
-          setFeaturedProducts([]);
-        }
+        const data = await productAPI.getFeaturedProducts(4);
+        setFeaturedProducts(data || []);
       } catch (error) {
         console.error("Error fetching featured products:", error);
         setFeaturedProducts([]);
@@ -109,14 +91,8 @@ export default function Home() {
     const fetchRecentProducts = async () => {
       try {
         setRecentLoading(true);
-        const response = await fetch("/api/products/recent?limit=6");
-        if (response.ok) {
-          const data = await response.json();
-          setRecentProducts(data || []);
-        } else {
-          console.error("Failed to fetch recent products:", response.status);
-          setRecentProducts([]);
-        }
+        const data = await productAPI.getRecentProducts(6);
+        setRecentProducts(data || []);
       } catch (error) {
         console.error("Error fetching recent products:", error);
         setRecentProducts([]);
@@ -134,63 +110,66 @@ export default function Home() {
       <HeroSlider slides={heroSlides} />
 
       {/* Categories Section */}
-      <section className="py-12 px-4 container mx-auto">
-        <div className="text-center mb-10">
-          <h2 className="text-2xl md:text-3xl font-bold mb-2">
-            Shop by Category
-          </h2>
-          <div className="w-24 h-1 bg-gradient-purple-pink mx-auto rounded-full"></div>
-        </div>
+      <section className="py-8 md:py-12 px-3 md:px-4">
+        <div className="container mx-auto">
+          <div className="text-center mb-6 md:mb-10">
+            <h2 className="text-xl md:text-2xl lg:text-3xl font-bold mb-2">
+              Shop by Category
+            </h2>
+            <div className="w-20 md:w-24 h-1 bg-gradient-purple-pink mx-auto rounded-full"></div>
+          </div>
 
-        {categoriesLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {[...Array(4)].map((_, i) => (
-              <CategoryCardSkeleton key={i} />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            {parentCategories.map((category) => (
-              <Link
-                href={`/category/${category.slug}`}
-                key={category._id || category.id}
-                className="group relative overflow-hidden rounded-lg shadow-md transition-transform hover:scale-105"
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent z-10"></div>
-                <div className="relative h-40 md:h-52 w-full">
-                  <ImageWithFallback
-                    src={category.image}
-                    alt={category.name}
-                    fill
-                    className="object-cover transition-transform group-hover:scale-110 duration-500"
-                  />
-                </div>
-                <h3 className="absolute bottom-3 left-0 right-0 text-center text-white font-bold text-lg z-20">
-                  {category.name}
-                </h3>
-              </Link>
-            ))}
-          </div>
-        )}
+          {categoriesLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
+              {[...Array(4)].map((_, i) => (
+                <CategoryCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
+              {parentCategories.map((category) => (
+                <Link
+                  href={`/category/${category.slug}`}
+                  key={category._id || category.id}
+                  className="group relative overflow-hidden rounded-lg shadow-md transition-transform hover:scale-105"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent z-10"></div>
+                  <div className="relative h-32 sm:h-40 md:h-48 lg:h-52 w-full">
+                    <ImageWithFallback
+                      src={category.image}
+                      alt={category.name}
+                      fill
+                      className="object-cover transition-transform group-hover:scale-110 duration-500"
+                    />
+                  </div>
+                  <h3 className="absolute bottom-2 md:bottom-3 left-0 right-0 text-center text-white font-bold text-sm md:text-base lg:text-lg z-20 px-2">
+                    {category.name}
+                  </h3>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Featured Products Section */}
-      <section className="py-12 px-4 container mx-auto bg-pattern-dots rounded-lg">
-        <div className="text-center mb-10">
-          <h2 className="text-2xl md:text-3xl font-bold mb-2">
-            Featured Products
-          </h2>
-          <div className="w-24 h-1 bg-gradient-pink-orange mx-auto rounded-full"></div>
-        </div>
+      <section className="py-8 md:py-12 px-3 md:px-4">
+        <div className="container mx-auto bg-pattern-dots rounded-lg p-4 md:p-6">
+          <div className="text-center mb-6 md:mb-10">
+            <h2 className="text-xl md:text-2xl lg:text-3xl font-bold mb-2">
+              Featured Products
+            </h2>
+            <div className="w-20 md:w-24 h-1 bg-gradient-pink-orange mx-auto rounded-full"></div>
+          </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
             {[...Array(4)].map((_, i) => (
               <ProductCardSkeleton key={i} />
             ))}
           </div>
         ) : featuredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
             {featuredProducts.map((product) => (
               <ProductCard key={product._id} product={product} />
             ))}
@@ -240,84 +219,88 @@ export default function Home() {
           </div>
         )}
 
-        <div className="text-center mt-10">
-          <Link
-            href="/products"
-            className="inline-flex items-center bg-white hover:bg-gradient-purple-pink hover:text-white border-2 border-gradient-purple-pink text-gradient-purple-pink px-6 py-2 rounded-full font-medium transition-colors"
-          >
-            View All Products
-            <ArrowLeftCircleIcon className="h-5 w-5 ml-2" />
-          </Link>
+          <div className="text-center mt-6 md:mt-10">
+            <Link
+              href="/products"
+              className="inline-flex items-center bg-white hover:bg-gradient-purple-pink hover:text-white border-2 border-gradient-purple-pink text-gradient-purple-pink px-4 md:px-6 py-2 rounded-full font-medium transition-colors text-sm md:text-base"
+            >
+              View All Products
+              <ArrowLeftCircleIcon className="h-5 w-5 ml-2" />
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* Promotional Banner */}
-      <section className="py-12 px-4 container mx-auto">
-        <div className="relative overflow-hidden rounded-lg">
-          {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-900/90 to-pink-800/90 z-10"></div>
+      <section className="py-8 md:py-12 px-3 md:px-4">
+        <div className="container mx-auto">
+          <div className="relative overflow-hidden rounded-lg">
+            {/* Gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-900/90 to-pink-800/90 z-10"></div>
 
-          {/* Image background */}
-          <div className="relative h-[300px] w-full">
-            <ImageWithFallback
-              src={heroData.promoImage}
-              alt="Special Offers"
-              fill
-              className="object-cover"
-            />
+            {/* Image background */}
+            <div className="relative h-[200px] md:h-[300px] w-full">
+              <ImageWithFallback
+                src={heroData.promoImage}
+                alt="Special Offers"
+                fill
+                className="object-cover"
+              />
 
-            {/* Overlay content */}
-            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center p-4">
-              <h2 className="text-2xl md:text-4xl font-bold text-white mb-4 drop-shadow-lg">
-                {heroData.promoTitle}
-              </h2>
-              <p className="text-lg text-white mb-6 max-w-2xl drop-shadow-md">
-                {heroData.promoSubtitle}
-              </p>
+              {/* Overlay content */}
+              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center p-3 md:p-4">
+                <h2 className="text-lg md:text-2xl lg:text-4xl font-bold text-white mb-2 md:mb-4 drop-shadow-lg">
+                  {heroData.promoTitle}
+                </h2>
+                <p className="text-sm md:text-base lg:text-lg text-white mb-3 md:mb-6 max-w-2xl drop-shadow-md px-2">
+                  {heroData.promoSubtitle}
+                </p>
 
-              {/* Gradient text button */}
-              <Link
-                href={heroData.promoButtonLink}
-                className="bg-white px-8 py-3 rounded-full font-medium text-lg transition-all transform hover:scale-105 shadow-lg bg-gradient-to-l from-purple-900/90 to-pink-800/90 text-white hover:brightness-110"
-              >
-                {heroData.promoButtonText}
-              </Link>
+                {/* Gradient text button */}
+                <Link
+                  href={heroData.promoButtonLink}
+                  className="bg-white px-4 md:px-8 py-2 md:py-3 rounded-full font-medium text-sm md:text-base lg:text-lg transition-all transform hover:scale-105 shadow-lg bg-gradient-to-l from-purple-900/90 to-pink-800/90 text-white hover:brightness-110"
+                >
+                  {heroData.promoButtonText}
+                </Link>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Recent Products Section */}
-      <section className="py-12 px-4 container mx-auto">
-        <div className="text-center mb-10">
-          <h2 className="text-2xl md:text-3xl font-bold mb-2">
-            Recently Added Products
-            {!recentLoading && recentProducts.length > 0 && (
-              <span className="ml-2 text-sm font-normal text-gray-500 align-middle">
-                ({recentProducts.length})
-              </span>
-            )}
-          </h2>
-          <div className="w-24 h-1 bg-gradient-purple-pink mx-auto rounded-full"></div>
-          <p className="mt-4 text-text-light max-w-2xl mx-auto">
-            Discover our newest spiritual items, freshly added to our
-            collection. These products are crafted with devotion and traditional
-            techniques.
-          </p>
-        </div>
+      <section className="py-8 md:py-12 px-3 md:px-4">
+        <div className="container mx-auto">
+          <div className="text-center mb-6 md:mb-10">
+            <h2 className="text-xl md:text-2xl lg:text-3xl font-bold mb-2">
+              Recently Added Products
+              {!recentLoading && recentProducts.length > 0 && (
+                <span className="ml-2 text-xs md:text-sm font-normal text-gray-500 align-middle">
+                  ({recentProducts.length})
+                </span>
+              )}
+            </h2>
+            <div className="w-20 md:w-24 h-1 bg-gradient-purple-pink mx-auto rounded-full"></div>
+            <p className="mt-3 md:mt-4 text-sm md:text-base text-text-light max-w-2xl mx-auto px-4">
+              Discover our newest spiritual items, freshly added to our
+              collection. These products are crafted with devotion and traditional
+              techniques.
+            </p>
+          </div>
 
-        {recentLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <ProductCardSkeleton key={i} />
-            ))}
-          </div>
-        ) : recentProducts.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
-            {recentProducts.map((product) => (
-              <ProductCard key={product._id} product={product} compact={true} />
-            ))}
-          </div>
+          {recentLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
+              {[...Array(6)].map((_, i) => (
+                <ProductCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : recentProducts.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
+              {recentProducts.map((product) => (
+                <ProductCard key={product._id} product={product} compact={true} />
+              ))}
+            </div>
         ) : (
           <div className="text-center py-12 bg-white rounded-lg shadow-md">
             <svg
@@ -343,14 +326,15 @@ export default function Home() {
           </div>
         )}
 
-        <div className="text-center mt-10">
-          <Link
-            href="/products?sort=newest"
-            className="inline-flex items-center bg-white hover:bg-gradient-purple-pink hover:text-white border-2 border-gradient-purple-pink text-gradient-purple-pink px-6 py-2 rounded-full font-medium transition-colors"
-          >
-            View All New Products
-            <ArrowLeftCircleIcon className="h-5 w-5 ml-2" />
-          </Link>
+          <div className="text-center mt-6 md:mt-10">
+            <Link
+              href="/products?sort=newest"
+              className="inline-flex items-center bg-white hover:bg-gradient-purple-pink hover:text-white border-2 border-gradient-purple-pink text-gradient-purple-pink px-4 md:px-6 py-2 rounded-full font-medium transition-colors text-sm md:text-base"
+            >
+              View All New Products
+              <ArrowLeftCircleIcon className="h-5 w-5 ml-2" />
+            </Link>
+          </div>
         </div>
       </section>
     </div>

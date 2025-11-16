@@ -43,15 +43,6 @@ export default function StatisticsPage() {
     }
   });
 
-  useEffect(() => {
-    if (!isAuthenticated || !isAdmin) {
-      router.push('/login?redirect=/admin/statistics');
-      return;
-    }
-
-    fetchStatisticsData();
-  }, [isAuthenticated, isAdmin, router, timeRange, fetchStatisticsData]);
-
   const fetchStatisticsData = useCallback(async () => {
     try {
       setLoading(true);
@@ -138,6 +129,15 @@ export default function StatisticsPage() {
       setLoading(false);
     }
   }, [user, timeRange]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !isAdmin) {
+      router.push('/login?redirect=/admin/statistics');
+      return;
+    }
+
+    fetchStatisticsData();
+  }, [isAuthenticated, isAdmin, router, timeRange, fetchStatisticsData]);
 
   const handleTimeRangeChange = (range) => {
     setTimeRange(range);

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import { paymentAPI } from '@/services/api';
 
 export default function RazorpayButton({ orderId, onSuccess, onError }) {
   const [loading, setLoading] = useState(false);
@@ -57,22 +58,8 @@ export default function RazorpayButton({ orderId, onSuccess, onError }) {
 
       console.log('Creating Razorpay order for order ID:', orderId);
 
-      // Step 1: Create order on your server
-      const response = await fetch('/api/payment/razorpay', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('userInfo') ? JSON.parse(localStorage.getItem('userInfo')).token : ''}`,
-        },
-        body: JSON.stringify({ orderId }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to create payment order');
-      }
-
+      // Step 1: Create order on your server using API service
+      const data = await paymentAPI.createRazorpayOrder({ orderId });
       console.log('Order created successfully:', data.order.id);
 
       // Step 2: Initialize Razorpay checkout form (as per documentation)
@@ -88,26 +75,13 @@ export default function RazorpayButton({ orderId, onSuccess, onError }) {
           try {
             console.log('Payment successful, verifying payment');
 
-            // Step 3: Verify payment signature on your server
-            const verifyResponse = await fetch('/api/payment/razorpay/verify', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('userInfo') ? JSON.parse(localStorage.getItem('userInfo')).token : ''}`,
-              },
-              body: JSON.stringify({
-                orderId,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature,
-              }),
+            // Step 3: Verify payment signature on your server using API service
+            const verifyData = await paymentAPI.verifyRazorpayPayment({
+              orderId,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
             });
-
-            const verifyData = await verifyResponse.json();
-
-            if (!verifyResponse.ok) {
-              throw new Error(verifyData.message || 'Payment verification failed');
-            }
 
             console.log('Payment verified successfully');
 

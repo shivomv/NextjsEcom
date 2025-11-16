@@ -7,6 +7,11 @@ import ClientOnly from "@/components/common/ClientOnly";
 export const metadata = {
   title: "Prashasak Samiti - Religious Products",
   description: "Shop for authentic religious and spiritual products - Puja items, Ganesh idols, and cow dung products",
+  icons: {
+    icon: '/icon.png',
+    shortcut: '/icon.png',
+    apple: '/icon.png',
+  },
 };
 
 export const viewport = {

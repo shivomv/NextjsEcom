@@ -60,10 +60,8 @@ export default function UsersManagement() {
           params.append('keyword', searchTerm);
         }
 
-        if (filter === 'admin') {
-          params.append('role', 'admin');
-        } else if (filter === 'customer') {
-          params.append('role', 'user');
+        if (filter !== 'all') {
+          params.append('role', filter);
         }
 
         const response = await fetch(`/api/users?${params.toString()}`, {
@@ -184,11 +182,11 @@ export default function UsersManagement() {
               options={[
                 { value: 'all', label: 'All Users' },
                 { value: 'admin', label: 'Admins' },
-                { value: 'customer', label: 'Customers' }
+                { value: 'user', label: 'Customers' }
               ]}
               selectedValue={filter}
               onChange={handleFilterChange}
-              label="Filter"
+              label="Filter by Role"
             />
           </form>
         </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import axios from 'axios';
+import { setAuthToken, clearAuthToken } from '@/utils/cookies';
 
 const API_URL = '/api';
 
@@ -17,20 +18,38 @@ api.interceptors.request.use(
   (config) => {
     if (typeof window !== 'undefined') {
       const userInfo = localStorage.getItem('userInfo');
+      console.log('[API Service] UserInfo from localStorage:', userInfo ? 'Found' : 'Not found');
+      
       if (userInfo) {
         try {
           const parsedUserInfo = JSON.parse(userInfo);
           const token = parsedUserInfo.token;
+          console.log('[API Service] Token extracted:', token ? 'Yes' : 'No');
+          
           if (token) {
+            // Set token in cookie for server-side access
+            setAuthToken(token);
+            
+            // Also set Authorization header as fallback
             config.headers.Authorization = `Bearer ${token}`;
+            console.log('[API Service] Token set in cookie and header for:', config.url);
           }
         } catch (error) {
-          console.error('Error parsing user info from localStorage:', error);
+          console.error('[API Service] Error parsing user info from localStorage:', error);
           // Remove invalid user info
           localStorage.removeItem('userInfo');
+          // Clear cookie
+          clearAuthToken();
         }
+      } else {
+        console.warn('[API Service] No userInfo in localStorage for request to:', config.url);
+        // Clear cookie if no user info
+        clearAuthToken();
       }
     }
+    
+    // Enable credentials to send cookies
+    config.withCredentials = true;
     return config;
   },
   (error) => {
@@ -126,6 +145,26 @@ export const productAPI = {
       throw error.response?.data?.message || error.message;
     }
   },
+
+  // Get featured products
+  getFeaturedProducts: async (limit = 8) => {
+    try {
+      const { data } = await api.get(`/products/featured?limit=${limit}`);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  // Get recent products
+  getRecentProducts: async (limit = 8) => {
+    try {
+      const { data } = await api.get(`/products/recent?limit=${limit}`);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
 };
 
 // Category API
@@ -211,6 +250,8 @@ export const userAPI = {
       // Store user data in localStorage
       if (typeof window !== 'undefined' && data.token) {
         localStorage.setItem('userInfo', JSON.stringify(data));
+        // Set token in cookie
+        setAuthToken(data.token);
       }
 
       return data;
@@ -231,6 +272,8 @@ export const userAPI = {
       // Store user data in localStorage
       if (typeof window !== 'undefined' && data.token) {
         localStorage.setItem('userInfo', JSON.stringify(data));
+        // Set token in cookie
+        setAuthToken(data.token);
       }
 
       return data;
@@ -241,16 +284,11 @@ export const userAPI = {
 
   // Logout user
   logout: async () => {
-    try {
-      // Call logout endpoint to invalidate token on server (if implemented)
-      await api.post('/users/logout');
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      // Always remove from localStorage even if server request fails
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('userInfo');
-      }
+    // Remove from localStorage and cookie
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('userInfo');
+      // Clear cookie
+      clearAuthToken();
     }
   },
 
@@ -348,6 +386,26 @@ export const orderAPI = {
   getMyOrders: async () => {
     try {
       const { data } = await api.get('/orders/myorders');
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  // Create order after payment
+  createOrderAfterPayment: async (orderData) => {
+    try {
+      const { data } = await api.post('/orders/create-after-payment', orderData);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  // Get all orders (admin)
+  getAllOrders: async (params = {}) => {
+    try {
+      const { data } = await api.get('/orders', { params });
       return data;
     } catch (error) {
       throw error.response?.data?.message || error.message;
@@ -503,6 +561,504 @@ export const cartAPI = {
   },
 };
 
+// Admin API
+export const adminAPI = {
+  // Dashboard Stats
+  getDashboardStats: async () => {
+    try {
+      const { data } = await api.get('/admin/dashboard/stats');
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  // Products Management
+  getAdminProducts: async (params = {}) => {
+    try {
+      const { data } = await api.get('/admin/products', { params });
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  getProductsCount: async () => {
+    try {
+      const { data } = await api.get('/admin/products/count');
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  getLowStockProducts: async (threshold = 10) => {
+    try {
+      const { data } = await api.get(`/admin/products/low-stock?threshold=${threshold}`);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  getOutOfStockProducts: async () => {
+    try {
+      const { data } = await api.get('/admin/products/out-of-stock');
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  createProduct: async (productData) => {
+    try {
+      const { data } = await api.post('/products', productData);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  updateProduct: async (id, productData) => {
+    try {
+      const { data } = await api.put(`/products/${id}`, productData);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  deleteProduct: async (id) => {
+    try {
+      const { data } = await api.delete(`/products/${id}`);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  // Categories Management
+  createCategory: async (categoryData) => {
+    try {
+      const { data } = await api.post('/categories', categoryData);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  updateCategory: async (id, categoryData) => {
+    try {
+      const { data } = await api.put(`/categories/${id}`, categoryData);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  deleteCategory: async (id) => {
+    try {
+      const { data } = await api.delete(`/categories/${id}`);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  // Orders Management
+  getAdminOrders: async (params = {}) => {
+    try {
+      const { data } = await api.get('/orders', { params });
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  getOrdersCount: async () => {
+    try {
+      const { data } = await api.get('/admin/orders/count');
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  getRecentOrders: async (limit = 10) => {
+    try {
+      const { data } = await api.get(`/admin/orders/recent?limit=${limit}`);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  getOrdersRevenue: async (params = {}) => {
+    try {
+      const { data } = await api.get('/admin/orders/revenue', { params });
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  updateOrder: async (id, orderData) => {
+    try {
+      const { data } = await api.put(`/orders/${id}`, orderData);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  // Users Management
+  getAllUsers: async (params = {}) => {
+    try {
+      const { data } = await api.get('/users', { params });
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  getUsersCount: async () => {
+    try {
+      const { data } = await api.get('/admin/users/count');
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  // Settings Management
+  getSettings: async () => {
+    try {
+      const { data } = await api.get('/admin/settings');
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  updateSettings: async (settingsData) => {
+    try {
+      const { data } = await api.post('/admin/settings', settingsData);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  // Delivery Agencies Management
+  getDeliveryAgencies: async () => {
+    try {
+      const { data } = await api.get('/admin/delivery-agencies');
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  createDeliveryAgency: async (agencyData) => {
+    try {
+      const { data } = await api.post('/admin/delivery-agencies', agencyData);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  updateDeliveryAgency: async (id, agencyData) => {
+    try {
+      const { data } = await api.put(`/admin/delivery-agencies/${id}`, agencyData);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  deleteDeliveryAgency: async (id) => {
+    try {
+      const { data } = await api.delete(`/admin/delivery-agencies/${id}`);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  // Banners Management
+  getBanners: async () => {
+    try {
+      const { data } = await api.get('/admin/banners');
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  createBanner: async (bannerData) => {
+    try {
+      const { data } = await api.post('/admin/banners', bannerData);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  updateBanner: async (id, bannerData) => {
+    try {
+      const { data } = await api.put(`/admin/banners/${id}`, bannerData);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  deleteBanner: async (id) => {
+    try {
+      const { data } = await api.delete(`/admin/banners/${id}`);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  // Payment Gateways Management
+  getPaymentGateways: async () => {
+    try {
+      const { data } = await api.get('/admin/payment-gateways');
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  updatePaymentGateway: async (id, gatewayData) => {
+    try {
+      const { data } = await api.put(`/admin/payment-gateways/${id}`, gatewayData);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  // Web Pages Management
+  getWebPages: async () => {
+    try {
+      const { data } = await api.get('/admin/web-pages');
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  getWebPageById: async (id) => {
+    try {
+      const { data } = await api.get(`/admin/web-pages/${id}`);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  createWebPage: async (pageData) => {
+    try {
+      const { data } = await api.post('/admin/web-pages', pageData);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  updateWebPage: async (id, pageData) => {
+    try {
+      const { data } = await api.put(`/admin/web-pages/${id}`, pageData);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  deleteWebPage: async (id) => {
+    try {
+      const { data } = await api.delete(`/admin/web-pages/${id}`);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  // Upload Management
+  uploadImage: async (formData) => {
+    try {
+      const { data } = await api.post('/admin/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  deleteImage: async (publicId) => {
+    try {
+      const { data } = await api.delete('/admin/upload', {
+        data: { publicId },
+      });
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+};
+
+// Reviews API
+export const reviewAPI = {
+  // Get product reviews
+  getProductReviews: async (productId, params = {}) => {
+    try {
+      const { data } = await api.get(`/products/${productId}/reviews`, { params });
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  // Get user's review for a product
+  getUserReview: async (productId) => {
+    try {
+      const { data } = await api.get(`/products/${productId}/user-review`);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  // Create product review
+  createReview: async (productId, reviewData) => {
+    try {
+      const { data } = await api.post(`/products/${productId}/reviews`, reviewData);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  // Update product review
+  updateReview: async (productId, reviewData) => {
+    try {
+      const { data } = await api.put(`/products/${productId}/reviews`, reviewData);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  // Check if user purchased product
+  checkPurchase: async (productId) => {
+    try {
+      const { data } = await api.get(`/products/${productId}/check-purchase`);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+};
+
+// Payment API
+export const paymentAPI = {
+  // Create Razorpay order
+  createRazorpayOrder: async (orderData) => {
+    try {
+      const { data } = await api.post('/payment/razorpay', orderData);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  // Verify Razorpay payment
+  verifyRazorpayPayment: async (paymentData) => {
+    try {
+      const { data } = await api.post('/payment/razorpay/verify', paymentData);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  // Create payment
+  createPayment: async (paymentData) => {
+    try {
+      const { data } = await api.post('/payment/razorpay/create-payment', paymentData);
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+};
+
+// Settings API
+export const settingsAPI = {
+  // Get public settings
+  getPublicSettings: async () => {
+    try {
+      const { data } = await api.get('/settings');
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+};
+
+// Upload API
+export const uploadAPI = {
+  // Upload public image
+  uploadPublicImage: async (formData) => {
+    try {
+      const { data } = await api.post('/upload-public', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+
+  // Upload private image (authenticated)
+  uploadPrivateImage: async (formData) => {
+    try {
+      const { data } = await api.post('/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+};
+
+// Receipt API
+export const receiptAPI = {
+  // Get order receipt
+  getOrderReceipt: async (orderId) => {
+    try {
+      const { data } = await api.get(`/orders/receipt/${orderId}`, {
+        responseType: 'blob',
+      });
+      return data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message;
+    }
+  },
+};
+
 // Export the API instance with all endpoints
 const apiService = {
   ...api,
@@ -511,6 +1067,12 @@ const apiService = {
   users: userAPI,
   orders: orderAPI,
   cart: cartAPI,
+  admin: adminAPI,
+  reviews: reviewAPI,
+  payment: paymentAPI,
+  settings: settingsAPI,
+  upload: uploadAPI,
+  receipt: receiptAPI,
 };
 
 export default apiService;

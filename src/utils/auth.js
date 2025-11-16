@@ -49,7 +49,7 @@ export const isAuthenticated = async (request) => {
 
     // If no token in header, check cookies
     logger.log('No token in header, checking cookies');
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const tokenCookie = cookieStore.get('token');
     const cookieToken = tokenCookie?.value;
     logger.log('Token from cookie:', cookieToken ? 'Present' : 'Not present');

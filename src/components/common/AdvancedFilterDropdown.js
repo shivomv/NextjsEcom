@@ -145,26 +145,32 @@ export default function AdvancedFilterDropdown({
                   )}
 
                   {filter.type === 'range' && (
-                    <div className="flex space-x-2">
+                    <div className="space-y-2">
                       <input
-                        type="number"
+                        type={filter.inputType || 'number'}
                         placeholder={filter.minPlaceholder || 'Min'}
-                        value={filterValues[filter.id]?.min || ''}
+                        value={filterValues[filter.id]?.startDate || filterValues[filter.id]?.min || ''}
                         onChange={(e) => handleInputChange(filter.id, {
                           ...filterValues[filter.id],
-                          min: e.target.value
+                          ...(filter.inputType === 'date' 
+                            ? { startDate: e.target.value }
+                            : { min: e.target.value }
+                          )
                         })}
-                        className="w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm"
                       />
                       <input
-                        type="number"
+                        type={filter.inputType || 'number'}
                         placeholder={filter.maxPlaceholder || 'Max'}
-                        value={filterValues[filter.id]?.max || ''}
+                        value={filterValues[filter.id]?.endDate || filterValues[filter.id]?.max || ''}
                         onChange={(e) => handleInputChange(filter.id, {
                           ...filterValues[filter.id],
-                          max: e.target.value
+                          ...(filter.inputType === 'date' 
+                            ? { endDate: e.target.value }
+                            : { max: e.target.value }
+                          )
                         })}
-                        className="w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm"
                       />
                     </div>
                   )}

@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect } from 'react';
 import { userAPI } from '@/services/api';
+import { setAuthToken, clearAuthToken } from '@/utils/cookies';
 
 // Create context
 const AuthContext = createContext();
@@ -23,6 +24,9 @@ export const AuthProvider = ({ children }) => {
         if (userInfo && userInfo.token) {
           // Set user from localStorage initially
           setUser(userInfo);
+          
+          // Set token in cookie for server-side access
+          setAuthToken(userInfo.token);
 
           try {
             // Verify token validity by fetching user profile
@@ -35,11 +39,15 @@ export const AuthProvider = ({ children }) => {
             userAPI.logout();
             setUser(null);
           }
+        } else {
+          // Clear cookie if no user info
+          clearAuthToken();
         }
       } catch (error) {
         console.error('Error loading user:', error);
         // Clear potentially corrupted data
         localStorage.removeItem('userInfo');
+        clearAuthToken();
         setUser(null);
       } finally {
         setLoading(false);

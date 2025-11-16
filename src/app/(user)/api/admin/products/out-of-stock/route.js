@@ -12,8 +12,8 @@ export async function GET(request) {
   try {
     // Check if admin
     const adminResult = await adminMiddleware(request);
-    if (adminResult.status) {
-      return adminResult;
+    if (!adminResult.success) {
+      return adminResult.status;
     }
 
     await dbConnect();
@@ -49,3 +49,4 @@ export async function GET(request) {
     );
   }
 }
+

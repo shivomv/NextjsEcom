@@ -13,8 +13,8 @@ export async function POST(request) {
   try {
     // Check admin authentication
     const authResult = await adminMiddleware(request);
-    if (authResult.status) {
-      return authResult;
+    if (!authResult.success) {
+      return authResult.status;
     }
 
     await dbConnect();
@@ -124,3 +124,4 @@ export async function POST(request) {
     );
   }
 }
+
