@@ -4,37 +4,42 @@ import { useState, useEffect } from 'react';
 import StarRating from '@/components/common/StarRating';
 import { useAuth } from '@/context/AuthContext';
 
-export default function ReviewList({ productId, onEditReview }) {
+export default function ReviewList({ productId, onEditReview, onReviewSubmitted }) {
   const { user } = useAuth();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    const fetchReviews = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(`/api/products/${productId}/reviews`);
+  const fetchReviews = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/products/${productId}/reviews`);
 
-        if (response.ok) {
-          const data = await response.json();
-          setReviews(data);
-        } else {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to fetch reviews');
-        }
-      } catch (err) {
-        setError(err.message || 'Error loading reviews');
-        console.error('Error fetching reviews:', err);
-      } finally {
-        setLoading(false);
+      if (response.ok) {
+        const data = await response.json();
+        setReviews(data);
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch reviews');
       }
-    };
+    } catch (err) {
+      setError(err.message || 'Error loading reviews');
+      console.error('Error fetching reviews:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     if (productId) {
       fetchReviews();
     }
   }, [productId]);
+
+  // Refresh reviews when onReviewSubmitted is called
+  useEffect(() => {
+    fetchReviews();
+  }, [onReviewSubmitted]);
 
   if (loading) {
     return (

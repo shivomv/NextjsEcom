@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { productAPI } from "@/services/api";
@@ -17,6 +17,7 @@ import ReviewForm from "@/components/products/ReviewForm";
 
 export default function ProductDetailPage() {
   const { slug } = useParams();
+  const router = useRouter();
   const { addToCart } = useCart();
 
   const [product, setProduct] = useState(null);
@@ -31,9 +32,10 @@ export default function ProductDetailPage() {
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [hasUserReviewed, setHasUserReviewed] = useState(false);
   const { user, isAuthenticated } = useAuth();
+const [refreshReviews, setRefreshReviews] = useState(false);
 
-  useEffect(() => {
-    const fetchProduct = async () => {
+useEffect(() => {
+  const fetchProduct = async () => {
       try {
         setLoading(true);
         setError(null);
@@ -626,6 +628,7 @@ export default function ProductDetailPage() {
                       .getElementById("review-form")
                       .scrollIntoView({ behavior: "smooth" });
                   }}
+                  onReviewSubmitted={() => setRefreshReviews(!refreshReviews)}
                 />
 
                 {/* Write a Review section - only show if user hasn't already reviewed */}
@@ -725,18 +728,20 @@ export default function ProductDetailPage() {
                           // Clear the review being edited after update
                           setReviewToEdit(null);
                           setShowReviewForm(false);
-
-                          // Update the hasUserReviewed state
-                          setHasUserReviewed(true);
-
-                          // Refresh the reviews list
-                          setTimeout(() => {
+                           // Update the hasUserReviewed state
+                           setHasUserReviewed(true);
+                           // Refresh the reviews list
+                           setTimeout(() => {
                             router.refresh();
                           }, 1000);
                         }}
                         onCancel={() => {
                           setReviewToEdit(null);
                           setShowReviewForm(false);
+                        }}
+                        onReviewSubmitted={() => {
+                          setHasUserReviewed(true);
+                          setRefreshReviews(!refreshReviews);
                         }}
                       />
                     </div>

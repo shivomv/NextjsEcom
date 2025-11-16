@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import StarRating from '@/components/common/StarRating';
 
-export default function ReviewForm({ productId, reviewToEdit, onReviewUpdated, onCancel, initialShowForm = false }) {
+export default function ReviewForm({ productId, reviewToEdit, onReviewUpdated, onCancel, initialShowForm = false, onReviewSubmitted }) {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
   const [rating, setRating] = useState(reviewToEdit ? reviewToEdit.rating : 5);
@@ -244,6 +244,11 @@ export default function ReviewForm({ productId, reviewToEdit, onReviewUpdated, o
       // Call the callback function if provided
       if (onReviewUpdated) {
         onReviewUpdated(data.review);
+      }
+
+      // Call the refresh function if provided
+      if (onReviewSubmitted) {
+        onReviewSubmitted();
       }
 
       // Refresh the page to show the updated review

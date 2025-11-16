@@ -12,12 +12,12 @@ export async function GET(request, context) {
   try {
     // Check authentication
     const authResult = await authMiddleware(request);
-    if (authResult.status) {
-      return authResult;
+    if (!authResult || !authResult.success) {
+      return authResult?.status || NextResponse.json({ message: 'Not authorized' }, { status: 401 });
     }
 
     await dbConnect();
-    const { id } =await context.params;
+    const { id } = await context.params;
     const user = authResult.user;
 
     // Find orders where the user has purchased this product and the order is delivered
