@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/utils/db';
 import Product from '@/models/productModel';
 import { adminMiddleware } from '@/utils/auth';
+import { sanitizeInput, escapeRegex } from '@/utils/sanitize';
+import { handleApiError } from '@/utils/errorHandler';
+import logger from '@/utils/logger';
 
 /**
  * @desc    Get all products with admin filters
@@ -18,22 +21,20 @@ export async function GET(request) {
 
     await dbConnect();
 
-    // Get query parameters
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page')) || 1;
-    const limit = parseInt(searchParams.get('limit')) || 10;
-    const keyword = searchParams.get('keyword');
-    const stock = searchParams.get('stock');
-    const active = searchParams.get('active');
+    const page = Math.max(1, parseInt(searchParams.get('page')) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit')) || 10));
+    const keyword = sanitizeInput(searchParams.get('keyword'));
+    const stock = sanitizeInput(searchParams.get('stock'));
+    const active = sanitizeInput(searchParams.get('active'));
 
-    // Build query
     let query = {};
 
-    // Filter by keyword if provided
     if (keyword) {
+      const escapedKeyword = escapeRegex(keyword);
       query.$or = [
-        { name: { $regex: keyword, $options: 'i' } },
-        { description: { $regex: keyword, $options: 'i' } },
+        { name: { $regex: escapedKeyword, $options: 'i' } },
+        { description: { $regex: escapedKeyword, $options: 'i' } },
       ];
     }
 
@@ -74,11 +75,7 @@ export async function GET(request) {
       total,
     });
   } catch (error) {
-    console.error('Error fetching products:', error);
-    return NextResponse.json(
-      { message: error.message || 'Server error' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Error fetching products');
   }
 }
 
@@ -96,23 +93,18 @@ export async function POST(request) {
     }
 
     await dbConnect();
-    const data = await request.json();
+    const body = await request.json();
+    const data = sanitizeInput(body);
 
-    // Add user to product data
     const productData = {
       ...data,
       user: adminResult.user._id,
     };
 
-    // Create product
     const product = await Product.create(productData);
 
     return NextResponse.json(product, { status: 201 });
   } catch (error) {
-    console.error('Error creating product:', error);
-    return NextResponse.json(
-      { message: error.message || 'Server error' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Error creating product');
   }
 }

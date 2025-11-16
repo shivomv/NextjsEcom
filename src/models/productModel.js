@@ -196,6 +196,15 @@ const productSchema = new mongoose.Schema(
   }
 );
 
+// Create indexes for better query performance
+productSchema.index({ name: 'text', description: 'text' });
+productSchema.index({ category: 1, isActive: 1 });
+productSchema.index({ price: 1 });
+productSchema.index({ ratings: -1 });
+productSchema.index({ createdAt: -1 });
+productSchema.index({ slug: 1 });
+productSchema.index({ isFeatured: 1 });
+
 // Create slug from name
 productSchema.pre('save', function (next) {
   if (this.isModified('name')) {

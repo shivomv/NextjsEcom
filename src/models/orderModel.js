@@ -163,6 +163,14 @@ const orderSchema = new mongoose.Schema(
   }
 );
 
+// Create indexes for better query performance
+orderSchema.index({ user: 1, createdAt: -1 });
+orderSchema.index({ status: 1 });
+orderSchema.index({ isPaid: 1 });
+orderSchema.index({ isDelivered: 1 });
+orderSchema.index({ createdAt: -1 });
+orderSchema.index({ orderNumber: 1 });
+
 // Generate order number and add initial status to history
 orderSchema.pre('save', function (next) {
   if (this.isNew) {

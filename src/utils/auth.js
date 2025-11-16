@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import User from '@/models/userModel';
 import dbConnect from '@/utils/db';
 import config from '@/config';
+import logger from './logger';
 
 const JWT_SECRET = config.auth.jwtSecret;
 const JWT_EXPIRE = config.auth.jwtExpire;
@@ -35,34 +36,34 @@ export const isAuthenticated = async (request) => {
   try {
     // Get token from authorization header
     const authHeader = request.headers.get('authorization');
-    console.log('Auth header:', authHeader ? 'Present' : 'Not present');
+    logger.log('Auth header:', authHeader ? 'Present' : 'Not present');
 
     const token = authHeader?.split(' ')[1];
-    console.log('Token from header:', token ? 'Present' : 'Not present');
+    logger.log('Token from header:', token ? 'Present' : 'Not present');
 
     // If token in header, use it
     if (token) {
-      console.log('Using token from header');
+      logger.log('Using token from header');
       return verifyAndGetUser(token);
     }
 
     // If no token in header, check cookies
-    console.log('No token in header, checking cookies');
+    logger.log('No token in header, checking cookies');
     const cookieStore = cookies();
     const tokenCookie = cookieStore.get('token');
     const cookieToken = tokenCookie?.value;
-    console.log('Token from cookie:', cookieToken ? 'Present' : 'Not present');
+    logger.log('Token from cookie:', cookieToken ? 'Present' : 'Not present');
 
     if (cookieToken) {
-      console.log('Using token from cookie');
+      logger.log('Using token from cookie');
       return verifyAndGetUser(cookieToken);
     }
 
-    console.log('No token found in header or cookies');
+    logger.log('No token found in header or cookies');
     return { success: false, message: 'Not authorized, no token' };
 
   } catch (error) {
-    console.error('Auth error:', error);
+    logger.error('Auth error:', error);
     return { success: false, message: 'Authentication error' };
   }
 };
@@ -72,30 +73,30 @@ export const isAuthenticated = async (request) => {
  */
 const verifyAndGetUser = async (token) => {
   try {
-    console.log('Verifying token...');
+    logger.log('Verifying token...');
     // Verify token
     const decoded = verifyToken(token);
     if (!decoded) {
-      console.log('Token verification failed');
+      logger.log('Token verification failed');
       return { success: false, message: 'Not authorized, token failed' };
     }
-    console.log('Token verified successfully, user ID:', decoded.id);
+    logger.log('Token verified successfully, user ID:', decoded.id);
 
     // Connect to database
     await dbConnect();
 
     // Get user from database
-    console.log('Finding user in database...');
+    logger.log('Finding user in database...');
     const user = await User.findById(decoded.id).select('-password');
     if (!user) {
-      console.log('User not found in database');
+      logger.log('User not found in database');
       return { success: false, message: 'User not found' };
     }
-    console.log('User found in database, role:', user.role);
+    logger.log('User found in database, role:', user.role);
 
     return { success: true, user };
   } catch (error) {
-    console.error('Auth error:', error);
+    logger.error('Auth error:', error);
     return { success: false, message: 'Authentication error' };
   }
 };

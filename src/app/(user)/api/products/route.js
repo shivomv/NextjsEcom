@@ -4,6 +4,9 @@ import dbConnect from '@/utils/db';
 import Product from '@/models/productModel';
 import Category from '@/models/categoryModel';
 import { authMiddleware } from '@/utils/auth';
+import { sanitizeInput, escapeRegex } from '@/utils/sanitize';
+import { handleApiError } from '@/utils/errorHandler';
+import logger from '@/utils/logger';
 
 /**
  * @desc    Get all products or filter by category
@@ -14,14 +17,14 @@ export async function GET(request) {
   try {
     await dbConnect();
 
-    // Get query parameters
+    // Get and sanitize query parameters
     const { searchParams } = new URL(request.url);
-    const category = searchParams.get('category');
-    const keyword = searchParams.get('keyword');
-    const sort = searchParams.get('sort');
-    const featured = searchParams.get('featured');
-    const page = parseInt(searchParams.get('page')) || 1;
-    const limit = parseInt(searchParams.get('limit')) || 12;
+    const category = sanitizeInput(searchParams.get('category'));
+    const keyword = sanitizeInput(searchParams.get('keyword'));
+    const sort = sanitizeInput(searchParams.get('sort'));
+    const featured = sanitizeInput(searchParams.get('featured'));
+    const page = Math.max(1, parseInt(searchParams.get('page')) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit')) || 12));
 
     // Build query
     let query = { isActive: true };
@@ -40,15 +43,16 @@ export async function GET(request) {
           }
         }
       } catch (error) {
-        console.error('Error processing category filter:', error);
+        logger.error('Error processing category filter:', error);
       }
     }
 
-    // Filter by keyword if provided
+    // Filter by keyword if provided (escape regex special characters)
     if (keyword) {
+      const escapedKeyword = escapeRegex(keyword);
       query.$or = [
-        { name: { $regex: keyword, $options: 'i' } },
-        { description: { $regex: keyword, $options: 'i' } },
+        { name: { $regex: escapedKeyword, $options: 'i' } },
+        { description: { $regex: escapedKeyword, $options: 'i' } },
       ];
     }
 
@@ -95,11 +99,7 @@ export async function GET(request) {
       total,
     });
   } catch (error) {
-    console.error('Error fetching products:', error);
-    return NextResponse.json(
-      { message: error.message || 'Server error' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Error fetching products');
   }
 }
 
@@ -117,17 +117,14 @@ export async function POST(request) {
     }
 
     await dbConnect();
-    const data = await request.json();
+    const body = await request.json();
+    const data = sanitizeInput(body);
 
     // Create product
     const product = await Product.create(data);
 
     return NextResponse.json(product);
   } catch (error) {
-    console.error('Error creating product:', error);
-    return NextResponse.json(
-      { message: error.message || 'Server error' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Error creating product');
   }
 }

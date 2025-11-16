@@ -31,11 +31,15 @@ async function dbConnect() {
       ...config.database.options
     };
 
-    console.log('Connecting to MongoDB with URI:', MONGODB_URI.substring(0, 20) + '...');
-    console.log('Connection options:', JSON.stringify(opts));
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Connecting to MongoDB with URI:', MONGODB_URI.substring(0, 20) + '...');
+      console.log('Connection options:', JSON.stringify(opts));
+    }
 
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
-      console.log('MongoDB connection successful');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('MongoDB connection successful');
+      }
       return mongoose;
     });
   }
@@ -48,7 +52,6 @@ async function dbConnect() {
       name: e.name,
       message: e.message,
       code: e.code,
-      stack: e.stack,
     });
     cached.promise = null;
     throw new Error(`Database connection failed: ${e.message}`);

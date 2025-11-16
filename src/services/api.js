@@ -206,7 +206,7 @@ export const userAPI = {
   // Register user
   register: async (userData) => {
     try {
-      const { data } = await api.post('/users/register', userData);
+      const { data } = await api.post('/users', userData);
 
       // Store user data in localStorage
       if (typeof window !== 'undefined' && data.token) {

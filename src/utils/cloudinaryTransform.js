@@ -94,7 +94,6 @@ export const transformImage = (url, options = {}) => {
     
     return url;
   } catch (error) {
-    console.error('Error transforming Cloudinary URL:', error);
     return url;
   }
 };
@@ -148,7 +147,6 @@ export const getResponsiveImageUrl = (url, options = {}) => {
 
     return result;
   } catch (error) {
-    console.error('Error generating responsive image URLs:', error);
     return { original: url };
   }
 };

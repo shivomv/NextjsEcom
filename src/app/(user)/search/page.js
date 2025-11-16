@@ -204,32 +204,7 @@ export default function SearchPage() {
                 <p className="text-gray-700">Search Results for: &quot;{query}&quot;</p>
               </div>
 
-              <div className="flex flex-col md:flex-row md:items-center gap-2">
-                {/* Smart Search Explanation */}
-                <div className="text-xs text-gray-600 bg-yellow-50 px-2 py-1 rounded border border-yellow-200 md:mr-2">
-                  <span className="font-medium">Tip:</span> Smart Search helps find products even with misspelled words
-                </div>
 
-                {/* Fuzzy Search Toggle */}
-                <div className="flex items-center bg-white px-3 py-1 rounded-full shadow-sm border border-gray-200">
-                  <label htmlFor="fuzzy-search" className="mr-2 text-sm font-medium text-gray-700">
-                    Smart Search
-                  </label>
-                  <div className="relative inline-block w-12 mr-1 align-middle select-none">
-                    <input
-                      type="checkbox"
-                      id="fuzzy-search"
-                      name="fuzzy-search"
-                      checked={useFuzzySearch}
-                      onChange={handleFuzzySearchToggle}
-                      className="sr-only"
-                    />
-                    <div className={`block w-12 h-6 rounded-full transition-colors ${useFuzzySearch ? 'bg-gradient-purple-pink' : 'bg-gray-300'}`}></div>
-                    <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform transform ${useFuzzySearch ? 'translate-x-6' : ''}`}></div>
-                  </div>
-                  <span className="text-xs text-gray-500 ml-1">{useFuzzySearch ? 'On' : 'Off'}</span>
-                </div>
-              </div>
             </div>
           </div>
         </div>

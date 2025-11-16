@@ -10,6 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import Breadcrumb from "@/components/common/Breadcrumb";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import ProductCard from "@/components/products/ProductCard";
+import ProductDetailSkeleton from "@/components/common/ProductDetailSkeleton";
 import StarRating from "@/components/common/StarRating";
 import ReviewList from "@/components/products/ReviewList";
 import ReviewForm from "@/components/products/ReviewForm";
@@ -162,13 +163,7 @@ export default function ProductDetailPage() {
   }
 
   if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-center items-center h-64">
-          <LoadingSpinner size="large" />
-        </div>
-      </div>
-    );
+    return <ProductDetailSkeleton />;
   }
 
   if (error) {
@@ -633,29 +628,82 @@ export default function ProductDetailPage() {
                   }}
                 />
 
-                {/* Write a Review button - only show if user hasn't already reviewed */}
-                {isAuthenticated && !hasUserReviewed && (
-                  <div className="mt-6 mb-6 flex justify-center">
-                    <button
-                      onClick={() => {
-                        setReviewToEdit(null);
-                        setShowReviewForm(!showReviewForm);
-                        if (!showReviewForm) {
-                          // Scroll to review form when showing it
-                          setTimeout(() => {
-                            document
-                              .getElementById("review-form")
-                              .scrollIntoView({ behavior: "smooth" });
-                          }, 100);
-                        }
-                      }}
-                      className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark transition-colors flex items-center"
-                    >
-                      {showReviewForm ? (
-                        <>
+                {/* Write a Review section - only show if user hasn't already reviewed */}
+                {isAuthenticated && !hasUserReviewed && !showReviewForm && (
+                  <div className="mt-6 mb-6">
+                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-dashed border-purple-300 rounded-xl p-6 text-center hover:border-purple-400 transition-all">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="bg-gradient-purple-pink p-3 rounded-full">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5 mr-2"
+                            className="h-8 w-8 text-white"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                            />
+                          </svg>
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-900 mb-1">
+                            Share Your Experience
+                          </h3>
+                          <p className="text-gray-600 text-sm">
+                            Help other customers by sharing your thoughts about this product
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setReviewToEdit(null);
+                            setShowReviewForm(true);
+                            setTimeout(() => {
+                              document
+                                .getElementById("review-form")
+                                ?.scrollIntoView({ behavior: "smooth", block: "center" });
+                            }, 100);
+                          }}
+                          className="bg-gradient-purple-pink text-white px-8 py-3 rounded-full font-semibold hover:opacity-90 transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                            />
+                          </svg>
+                          Write Your Review
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Review form */}
+                {showReviewForm && (
+                  <div id="review-form" className="mt-6 scroll-mt-20">
+                    <div className="relative">
+                      {/* Close button for non-edit mode */}
+                      {!reviewToEdit && (
+                        <button
+                          onClick={() => setShowReviewForm(false)}
+                          className="absolute -top-2 -right-2 z-10 bg-white border-2 border-gray-300 text-gray-600 hover:text-gray-900 hover:border-gray-400 rounded-full p-2 shadow-md hover:shadow-lg transition-all"
+                          title="Close review form"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -667,52 +715,33 @@ export default function ProductDetailPage() {
                               d="M6 18L18 6M6 6l12 12"
                             />
                           </svg>
-                          Hide Review Form
-                        </>
-                      ) : (
-                        <>
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5 mr-2"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                            />
-                          </svg>
-                          Write a Review
-                        </>
+                        </button>
                       )}
-                    </button>
+                      <ReviewForm
+                        productId={product._id}
+                        reviewToEdit={reviewToEdit}
+                        initialShowForm={showReviewForm}
+                        onReviewUpdated={(review) => {
+                          // Clear the review being edited after update
+                          setReviewToEdit(null);
+                          setShowReviewForm(false);
+
+                          // Update the hasUserReviewed state
+                          setHasUserReviewed(true);
+
+                          // Refresh the reviews list
+                          setTimeout(() => {
+                            router.refresh();
+                          }, 1000);
+                        }}
+                        onCancel={() => {
+                          setReviewToEdit(null);
+                          setShowReviewForm(false);
+                        }}
+                      />
+                    </div>
                   </div>
                 )}
-
-                {/* Review form */}
-                <div id="review-form" className="mt-4">
-                  <ReviewForm
-                    productId={product._id}
-                    reviewToEdit={reviewToEdit}
-                    initialShowForm={showReviewForm}
-                    onReviewUpdated={(review) => {
-                      // Clear the review being edited after update
-                      setReviewToEdit(null);
-                      setShowReviewForm(false);
-
-                      // Update the hasUserReviewed state
-                      setHasUserReviewed(true);
-
-                      // Refresh the reviews list
-                      setTimeout(() => {
-                        router.refresh();
-                      }, 1000);
-                    }}
-                  />
-                </div>
               </div>
             )}
 

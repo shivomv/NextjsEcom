@@ -4,6 +4,23 @@ import { isValidObjectId } from './utils/validation';
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
 
+  // Block test/debug routes in production
+  if (process.env.NODE_ENV === 'production') {
+    const testRoutes = [
+      '/test-categories',
+      '/razorpay-test',
+      '/cloudinary-test',
+      '/cloudinary-status',
+      '/db-test',
+      '/test-upload',
+      '/upload-test'
+    ];
+    
+    if (testRoutes.some(route => pathname.startsWith(route))) {
+      return NextResponse.redirect(new URL('/404', request.url));
+    }
+  }
+
   // Check if this is a product detail page using slug format
   if (pathname.startsWith('/products/') && !pathname.includes('/reviews')) {
     const slug = pathname.split('/')[2];
@@ -28,7 +45,9 @@ export async function middleware(request) {
   return NextResponse.next();
 }
 
-// Only run middleware on product detail pages
+// Run middleware on all routes except static files
 export const config = {
-  matcher: '/products/:path*',
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico).*)',
+  ],
 };

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import ImageWithFallback from '@/components/common/ImageWithFallback';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import { OrdersPageSkeleton } from '@/components/common/PageSkeletons';
 
 export default function OrdersPage() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -423,10 +424,7 @@ export default function OrdersPage() {
             )}
           </div>
         ) : loading ? (
-          <div className="bg-white rounded-lg shadow-md p-8 text-center">
-            <LoadingSpinner />
-            <p className="mt-4 text-text-light">Loading your orders...</p>
-          </div>
+          <OrdersPageSkeleton />
         ) : (
           <div className="bg-white rounded-lg shadow-md p-8 text-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

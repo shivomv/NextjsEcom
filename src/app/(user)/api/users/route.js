@@ -2,14 +2,34 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/utils/db';
 import User from '@/models/userModel';
 import { adminMiddleware } from '@/utils/auth';
+import { rateLimitMiddleware } from '@/utils/rateLimit';
+import { validateData, userRegistrationSchema } from '@/utils/validation';
+import { sanitizeInput } from '@/utils/sanitize';
+import { handleApiError, ApiError } from '@/utils/errorHandler';
 
 // @desc    Register a new user
 // @route   POST /api/users
 // @access  Public
 export async function POST(request) {
   try {
+    // Check rate limit
+    const rateLimit = rateLimitMiddleware('register')(request);
+    if (rateLimit.limited) {
+      return rateLimit.response;
+    }
+
     await dbConnect();
-    const { name, email, password, phone } = await request.json();
+    const body = await request.json();
+    
+    // Sanitize input
+    const sanitizedData = sanitizeInput(body);
+    const { name, email, password, phone } = sanitizedData;
+    
+    // Validate input
+    const validation = validateData(userRegistrationSchema, { name, email, password, phone });
+    if (!validation.success) {
+      throw new ApiError('Validation failed', 400, validation.errors);
+    }
 
     // Check if user already exists
     const userExists = await User.findOne({ email });
@@ -45,11 +65,7 @@ export async function POST(request) {
       );
     }
   } catch (error) {
-    console.error('Error registering user:', error);
-    return NextResponse.json(
-      { message: error.message || 'Server error' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Error registering user');
   }
 }
 
@@ -72,12 +88,13 @@ export async function GET(request) {
     const limit = parseInt(searchParams.get('limit')) || 10;
     const keyword = searchParams.get('keyword') || '';
 
-    // Build query
-    const query = keyword
+    // Sanitize and build query
+    const sanitizedKeyword = keyword ? sanitizeInput(keyword) : '';
+    const query = sanitizedKeyword
       ? {
           $or: [
-            { name: { $regex: keyword, $options: 'i' } },
-            { email: { $regex: keyword, $options: 'i' } },
+            { name: { $regex: sanitizedKeyword, $options: 'i' } },
+            { email: { $regex: sanitizedKeyword, $options: 'i' } },
           ],
         }
       : {};
@@ -99,10 +116,6 @@ export async function GET(request) {
       count,
     });
   } catch (error) {
-    console.error('Error fetching users:', error);
-    return NextResponse.json(
-      { message: error.message || 'Server error' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Error fetching users');
   }
 }

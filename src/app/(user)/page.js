@@ -8,6 +8,7 @@ import { useCategories } from "@/context/CategoryContext";
 import { useCart } from "@/context/CartContext";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import ProductCard from "@/components/products/ProductCard";
+import { ProductCardSkeleton, CategoryCardSkeleton, HeroSkeleton } from "@/components/common/Skeleton";
 import { ArrowLeftCircleIcon } from "@heroicons/react/24/outline";
 
 export default function Home() {
@@ -142,8 +143,10 @@ export default function Home() {
         </div>
 
         {categoriesLoading ? (
-          <div className="flex justify-center py-12">
-            <LoadingSpinner size="lg" />
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <CategoryCardSkeleton key={i} />
+            ))}
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
@@ -181,8 +184,10 @@ export default function Home() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-12">
-            <LoadingSpinner size="lg" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <ProductCardSkeleton key={i} />
+            ))}
           </div>
         ) : featuredProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -302,8 +307,10 @@ export default function Home() {
         </div>
 
         {recentLoading ? (
-          <div className="flex justify-center py-12">
-            <LoadingSpinner size="lg" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <ProductCardSkeleton key={i} />
+            ))}
           </div>
         ) : recentProducts.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">

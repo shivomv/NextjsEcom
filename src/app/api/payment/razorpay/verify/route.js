@@ -3,6 +3,10 @@ import crypto from 'crypto';
 import dbConnect from '@/utils/db';
 import Order from '@/models/orderModel';
 import { authMiddleware } from '@/utils/auth';
+import { rateLimitMiddleware } from '@/utils/rateLimit';
+import { sanitizeInput } from '@/utils/sanitize';
+import { handleApiError, ApiError } from '@/utils/errorHandler';
+import logger from '@/utils/logger';
 
 // Get Razorpay key secret from environment variables
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'qor92M8x9BMwtHZgpGcfoUgT';
@@ -13,6 +17,12 @@ const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'qor92M8x9BMwtHZg
  */
 export async function POST(request) {
   try {
+    // Check rate limit
+    const rateLimit = rateLimitMiddleware('payment')(request);
+    if (rateLimit.limited) {
+      return rateLimit.response;
+    }
+
     // Check if authenticated
     const authResult = await authMiddleware(request);
     if (!authResult.success) {
@@ -22,21 +32,19 @@ export async function POST(request) {
     // Connect to database
     await dbConnect();
 
-    // Parse request body
+    // Parse and sanitize request body
     const body = await request.json();
+    const sanitizedBody = sanitizeInput(body);
     const {
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
       orderId
-    } = body;
+    } = sanitizedBody;
 
     // Validate required fields
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !orderId) {
-      return NextResponse.json(
-        { success: false, message: 'Missing required payment information' },
-        { status: 400 }
-      );
+      throw new ApiError('Missing required payment information', 400);
     }
 
     // Find the order in the database
@@ -67,9 +75,9 @@ export async function POST(request) {
     // Verify Razorpay signature as per official documentation
     // https://razorpay.com/docs/payments/payment-gateway/web-integration/standard/build-integration/#step-3-verify-signature
 
-    console.log('Verifying payment signature for order:', orderId);
-    console.log('Payment ID:', razorpay_payment_id);
-    console.log('Order ID:', razorpay_order_id);
+    logger.log('Verifying payment signature for order:', orderId);
+    logger.log('Payment ID:', razorpay_payment_id);
+    logger.log('Order ID:', razorpay_order_id);
 
     // Create the signature verification string
     const signaturePayload = razorpay_order_id + "|" + razorpay_payment_id;
@@ -84,17 +92,11 @@ export async function POST(request) {
     const isSignatureValid = expectedSignature === razorpay_signature;
 
     if (!isSignatureValid) {
-      console.error('Payment verification failed: Invalid signature');
-      console.error('Expected:', expectedSignature);
-      console.error('Received:', razorpay_signature);
-
-      return NextResponse.json(
-        { success: false, message: 'Payment verification failed: Invalid signature' },
-        { status: 400 }
-      );
+      logger.error('Payment verification failed: Invalid signature');
+      throw new ApiError('Payment verification failed: Invalid signature', 400);
     }
 
-    console.log('Payment signature verified successfully');
+    logger.log('Payment signature verified successfully');
 
     // Update order payment status
     order.isPaid = true;
@@ -120,10 +122,6 @@ export async function POST(request) {
       },
     });
   } catch (error) {
-    console.error('Error verifying Razorpay payment:', error);
-    return NextResponse.json(
-      { success: false, message: error.message || 'Failed to verify payment' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Failed to verify payment');
   }
 }

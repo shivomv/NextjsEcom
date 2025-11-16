@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { authMiddleware } from '@/utils/auth';
 import { v2 as cloudinary } from 'cloudinary';
+import { rateLimitMiddleware } from '@/utils/rateLimit';
+import { handleApiError, ApiError } from '@/utils/errorHandler';
+import logger from '@/utils/logger';
 
 // Configure Cloudinary
 cloudinary.config({
@@ -22,6 +25,12 @@ export const config = {
  */
 export async function POST(request) {
   try {
+    // Check rate limit
+    const rateLimit = rateLimitMiddleware('upload')(request);
+    if (rateLimit.limited) {
+      return rateLimit.response;
+    }
+
     // Check authentication
     const authResult = await authMiddleware(request);
     if (authResult.status) {
@@ -33,18 +42,25 @@ export async function POST(request) {
     const files = formData.getAll('files');
 
     if (!files || files.length === 0) {
-      return NextResponse.json(
-        { message: 'No files provided' },
-        { status: 400 }
-      );
+      throw new ApiError('No files provided', 400);
     }
 
     // Limit to 5 files
     if (files.length > 5) {
-      return NextResponse.json(
-        { message: 'Maximum 5 files allowed' },
-        { status: 400 }
-      );
+      throw new ApiError('Maximum 5 files allowed', 400);
+    }
+    
+    // Validate file types
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    
+    for (const file of files) {
+      if (!allowedTypes.includes(file.type)) {
+        throw new ApiError(`Invalid file type: ${file.type}. Only JPEG, PNG, and WebP are allowed.`, 400);
+      }
+      if (file.size > maxSize) {
+        throw new ApiError(`File too large: ${file.name}. Maximum size is 5MB.`, 400);
+      }
     }
 
     // Upload each file to Cloudinary
@@ -100,10 +116,6 @@ export async function POST(request) {
       imagesData,
     });
   } catch (error) {
-    console.error('Error uploading files:', error);
-    return NextResponse.json(
-      { message: error.message || 'Server error' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Error uploading files');
   }
 }

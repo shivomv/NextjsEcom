@@ -7,6 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { fetchBlogPost } from '@/services/bloggerApi';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { formatDistanceToNow, format } from 'date-fns';
+import DOMPurify from 'isomorphic-dompurify';
 
 export default function BlogPostPage() {
   const params = useParams();
@@ -62,6 +63,17 @@ export default function BlogPostPage() {
     
     // Return default image if no image found
     return '/images/blog-placeholder.jpg';
+  };
+
+  // Sanitize HTML content to prevent XSS
+  const getSanitizedContent = () => {
+    if (!post?.content) return '';
+    
+    return DOMPurify.sanitize(post.content, {
+      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'img', 'blockquote', 'code', 'pre', 'span', 'div'],
+      ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'target', 'rel'],
+      ALLOW_DATA_ATTR: false
+    });
   };
 
   if (loading) {
@@ -170,7 +182,7 @@ export default function BlogPostPage() {
             <div className="p-8">
               <div 
                 className="prose prose-lg max-w-none prose-headings:text-primary prose-a:text-primary"
-                dangerouslySetInnerHTML={{ __html: post.content }}
+                dangerouslySetInnerHTML={{ __html: getSanitizedContent() }}
               />
             </div>
           </div>

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ImageWithFallback from '@/components/common/ImageWithFallback';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import { BlogPageSkeleton } from '@/components/common/PageSkeletons';
 import BlogPostCard from '@/components/blog/BlogPostCard';
 import { fetchBlogPosts, fetchBlogCategories } from '@/services/bloggerApi';
 
@@ -167,9 +168,7 @@ export default function BlogPage() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <LoadingSpinner size="lg" />
-          </div>
+          <BlogPageSkeleton />
         ) : error ? (
           <div className="bg-white rounded-xl shadow-md p-12 text-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 mx-auto text-red-500/50 mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

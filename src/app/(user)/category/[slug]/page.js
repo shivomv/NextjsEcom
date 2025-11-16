@@ -6,6 +6,7 @@ import ImageWithFallback from '@/components/common/ImageWithFallback';
 import { useCategories } from '@/context/CategoryContext';
 import Breadcrumb from '@/components/common/Breadcrumb';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import { CategoryPageSkeleton } from '@/components/common/PageSkeletons';
 import LoadMore from '@/components/common/LoadMore';
 import ProductCard from '@/components/products/ProductCard';
 
@@ -165,11 +166,7 @@ export default function CategoryPage({ params }) {
 
   // Show loading state
   if (loading || categoriesLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
+    return <CategoryPageSkeleton />;
   }
 
   return (

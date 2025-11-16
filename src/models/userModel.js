@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
-import { generateToken } from '@/utils/auth';
+import jwt from 'jsonwebtoken';
 
 const addressSchema = new mongoose.Schema(
   {
@@ -35,7 +35,14 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: [true, 'Please add a password'],
-      minlength: 6,
+      minlength: [12, 'Password must be at least 12 characters'],
+      validate: {
+        validator: function(v) {
+          // Require uppercase, lowercase, number, and special character
+          return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]/.test(v);
+        },
+        message: 'Password must contain uppercase, lowercase, number, and special character'
+      },
       select: false,
     },
     phone: {
@@ -54,6 +61,11 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Create indexes for better query performance
+userSchema.index({ email: 1 });
+userSchema.index({ role: 1 });
+userSchema.index({ createdAt: -1 });
+
 // Encrypt password using bcrypt
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
@@ -71,7 +83,9 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
 
 // Generate and return JWT token
 userSchema.methods.getSignedJwtToken = function () {
-  return generateToken(this._id);
+  const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
+  const JWT_EXPIRE = process.env.JWT_EXPIRE || '30d';
+  return jwt.sign({ id: this._id }, JWT_SECRET, { expiresIn: JWT_EXPIRE });
 };
 
 // Delete the model if it exists to prevent overwrite warning in development

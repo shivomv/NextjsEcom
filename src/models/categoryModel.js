@@ -52,6 +52,12 @@ const categorySchema = new mongoose.Schema(
   }
 );
 
+// Create indexes for better query performance
+categorySchema.index({ slug: 1 });
+categorySchema.index({ parent: 1 });
+categorySchema.index({ isActive: 1 });
+categorySchema.index({ createdAt: -1 });
+
 // Create slug from name
 categorySchema.pre('save', function (next) {
   if (this.isModified('name')) {

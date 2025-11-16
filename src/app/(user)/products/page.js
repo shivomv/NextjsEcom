@@ -8,6 +8,7 @@ import Pagination from '@/components/common/Pagination';
 import Breadcrumb from '@/components/common/Breadcrumb';
 import MobileCategoryList from '@/components/common/MobileCategoryList';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import { ProductCardSkeleton } from '@/components/common/Skeleton';
 import { categoryAPI, productAPI } from '@/services/api';
 export default function ProductsPage() {
   const searchParams = useSearchParams();
@@ -210,8 +211,10 @@ export default function ProductsPage() {
             </div>
 
             {loading ? (
-              <div className="flex justify-center items-center h-64">
-                <LoadingSpinner />
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {[...Array(12)].map((_, i) => (
+                  <ProductCardSkeleton key={i} />
+                ))}
               </div>
             ) : error ? (
               <div className="bg-red-100 text-red-700 p-4 rounded-md">

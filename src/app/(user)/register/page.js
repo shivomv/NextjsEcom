@@ -42,8 +42,8 @@ export default function RegisterPage() {
       return;
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (password.length < 12) {
+      setError('Password must be at least 12 characters with uppercase, lowercase, number, and special character');
       return;
     }
 
@@ -150,7 +150,7 @@ export default function RegisterPage() {
               placeholder="Create a password"
             />
             <p className="mt-1 text-xs text-gray-500">
-              Password must be at least 6 characters long
+              Password must be at least 12 characters with uppercase, lowercase, number, and special character (@$!%*?&#)
             </p>
           </div>
 
