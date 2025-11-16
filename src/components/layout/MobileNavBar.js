@@ -16,7 +16,7 @@ export default function MobileNavBar() {
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gradient-purple-pink z-40 md:hidden shadow-[0_-2px_10px_rgba(0,0,0,0.1)]">
       {/* Gradient overlay at the top */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-purple-pink"></div>
-      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+      <div className="absolute top-0 left-1/2 transform -translate-x-1/ 2 -translate-y-1/2">
         <div className="w-10 h-1 bg-primary rounded-full opacity-50"></div>
       </div>
       <div className="flex justify-around items-center h-16">

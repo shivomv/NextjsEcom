@@ -105,7 +105,7 @@ export default function Header() {
       </div>
 
       {/* Main header with logo, search, cart and account */}
-      <div className="container mx-auto px-2 sm:px-4 py-3 relative bg-white">
+      <div className="container mx-auto px-2 sm:px-4 py-2 relative bg-white">
         {/* Traditional decorative elements */}
         <div className="absolute left-0 top-0 w-16 h-16 opacity-10 hidden md:block">
           <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -378,8 +378,8 @@ export default function Header() {
 
       {/* Mobile Menu (conditionally rendered) */}
       {isMenuOpen && (
-        <div className="md:hidden border-t border-primary/20 bg-white fixed top-[120px] left-0 right-0 z-40 max-h-[calc(100vh-120px)] overflow-y-auto shadow-lg">
-          <div className="flex justify-between items-center px-4 py-3 border-b border-primary/20">
+        <div className="md:hidden border-t border-primary/20 bg-white fixed top-0 left-0 right-0 z-40 max-h-[calc(100vh-80px)] overflow-y-auto shadow-lg container mx-auto">
+          <div className="flex justify-between items-center px-4 py-3 border-b border-primary/20 sticky top-0 bg-white">
             <h3 className="font-medium text-lg text-text flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
