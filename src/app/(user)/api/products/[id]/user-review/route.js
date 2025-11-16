@@ -17,7 +17,7 @@ export async function GET(request, context) {
     }
 
     await dbConnect();
-    const { id } = context.params;
+    const { id } =await context.params;
     const user = authResult.user;
 
     const product = await Product.findById(id);

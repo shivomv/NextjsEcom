@@ -2,80 +2,80 @@ import mongoose from 'mongoose';
 import slugify from 'slugify';
 
 const reviewSchema = new mongoose.Schema(
-  {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      required: true,
-      ref: 'User',
-    },
-    name: {
-      type: String,
-      required: true,
-    },
-    rating: {
-      type: Number,
-      required: true,
-      min: 1,
-      max: 5,
-    },
-    comment: {
-      type: String,
-      required: true,
-    },
-    title: {
-      type: String,
-      trim: true,
-    },
-    images: [String],
-    imagesData: [
-      {
-        url: String,
-        publicId: String,
-        width: Number,
-        height: Number,
-        format: String,
-        resourceType: String
-      }
-    ],
-    verifiedPurchase: {
-      type: Boolean,
-      default: true,
-    },
-    orderId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Order',
-    },
-    helpful: {
-      count: {
-        type: Number,
-        default: 0
-      },
-      users: [
-        {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: 'User'
+    {
+        user: {
+            type: mongoose.Schema.Types.ObjectId,
+            required: [true, 'User is required'],
+            ref: 'User',
+        },
+        name: {
+            type: String,
+            required: [true, 'Name is required'],
+        },
+        rating: {
+            type: Number,
+            required: [true, 'Rating is required'],
+            min: 1,
+            max: 5,
+        },
+        comment: {
+            type: String,
+            required: [true, 'Comment is required'],
+        },
+        title: {
+            type: String,
+            trim: true,
+        },
+        images: [String],
+        imagesData: [
+            {
+                url: String,
+                publicId: String,
+                width: Number,
+                height: Number,
+                format: String,
+                resourceType: String
+            }
+        ],
+        verifiedPurchase: {
+            type: Boolean,
+            default: true,
+        },
+        orderId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Order',
+        },
+        helpful: {
+            count: {
+                type: Number,
+                default: 0
+            },
+            users: [
+                {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: 'User'
+                }
+            ]
+        },
+        reported: {
+            count: {
+                type: Number,
+                default: 0
+            },
+            users: [
+                {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: 'User'
+                }
+            ]
+        },
+        status: {
+            type: String,
+            enum: ['pending', 'approved', 'rejected'],
+            default: 'approved'
         }
-      ]
     },
-    reported: {
-      count: {
-        type: Number,
-        default: 0
-      },
-      users: [
-        {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: 'User'
-        }
-      ]
-    },
-    status: {
-      type: String,
-      enum: ['pending', 'approved', 'rejected'],
-      default: 'approved'
-    }
-  },
-  { timestamps: true }
+    { timestamps: true }
 );
 
 const productSchema = new mongoose.Schema(
@@ -118,7 +118,6 @@ const productSchema = new mongoose.Schema(
     ],
     brand: {
       type: String,
-      required: [true, 'Please add a brand'],
     },
     category: {
       type: mongoose.Schema.Types.ObjectId,

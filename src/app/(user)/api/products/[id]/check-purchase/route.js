@@ -17,7 +17,7 @@ export async function GET(request, context) {
     }
 
     await dbConnect();
-    const { id } = context.params;
+    const { id } =await context.params;
     const user = authResult.user;
 
     // Find orders where the user has purchased this product and the order is delivered

@@ -13,7 +13,7 @@ import mongoose from 'mongoose';
 export async function GET(request, context) {
   try {
     await dbConnect();
-    const { id } = context.params;
+    const { id } =await context.params;
 
     const product = await Product.findById(id).select('reviews');
 
@@ -44,11 +44,12 @@ export async function POST(request, context) {
     // Check authentication
     const authResult = await authMiddleware(request);
     if (authResult.status) {
+      console.log('authResult:', authResult);
       return authResult;
     }
 
     await dbConnect();
-    const { id } = context.params;
+    const { id } = await context.params;
     const user = authResult.user;
     const { rating, comment, title, images = [] } = await request.json();
 
@@ -176,7 +177,7 @@ export async function PUT(request, context) {
     }
 
     await dbConnect();
-    const { id } = context.params;
+    const { id } =await context.params;
     const user = authResult.user;
     const { reviewId, rating, comment, title, images = [] } = await request.json();
 
