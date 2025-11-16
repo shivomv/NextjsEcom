@@ -43,7 +43,7 @@ export default function HeroSlider({ slides = [] }) {
   return (
     <section className="relative overflow-hidden">
       {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-purple-900/90 to-pink-800/80 z-10"></div>
+      <div className="absolute inset-0 bg-gradient-to-r from-purple-900/80 to-pink-800/80 z-10"></div>
 
       {/* Slider container */}
       <div className="relative h-[30vh] sm:h-[35vh] md:h-[60vh] min-h-[200px] sm:min-h-[250px] md:min-h-[400px] max-h-[600px] w-full">

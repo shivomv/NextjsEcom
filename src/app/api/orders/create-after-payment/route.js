@@ -70,6 +70,7 @@ export async function POST(request) {
     // Generate receipt number
     const receiptNumber = generateReceiptNumber();
 
+    console.log('User ID:', authResult.user._id);
     // Create order with payment information
     const order = new Order({
       user: authResult.user._id,
@@ -106,10 +107,15 @@ export async function POST(request) {
 
     // Update product stock quantities
     for (const item of orderData.orderItems) {
-      const product = await Product.findById(item.product);
+      const product = await Product.findById(item.product).populate('brand');
       if (product) {
         product.countInStock = Math.max(0, product.countInStock - item.qty);
-        await product.save();
+        console.log('Product before save:', product);
+        try {
+          await product.save();
+        } catch (productSaveError) {
+          console.error('Error saving product:', productSaveError);
+        }
       }
     }
 

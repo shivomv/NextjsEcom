@@ -236,7 +236,7 @@ export default function Home() {
         <div className="container mx-auto">
           <div className="relative overflow-hidden rounded-lg">
             {/* Gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-900/90 to-pink-800/90 z-10"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-900/80 to-pink-800/80 z-10"></div>
 
             {/* Image background */}
             <div className="relative h-[200px] md:h-[300px] w-full">

@@ -131,19 +131,22 @@ export default function ShippingStep({ shippingAddress = {}, onSubmit }) {
             {savedAddresses.map((address, index) => (
               <div
                 key={index}
-                className={`border rounded-lg p-3 sm:p-4 cursor-pointer transition-colors ${
-                  selectedAddress === address ? 'border-primary bg-primary bg-opacity-5' : 'border-gray-200 hover:border-primary'
-                }`}
+                className={`border rounded-lg p-3 sm:p-4 cursor-pointer transition-colors 
+                  ${selectedAddress === address 
+                    ? 'border-primary bg-primary bg-opacity-5 text-white' 
+                    : 'border-gray-200 hover:border-primary'}`
+                }
                 onClick={() => handleAddressSelect(address)}
               >
+
                 <p className="font-medium text-sm sm:text-base">{address.name || user.name}</p>
-                <p className="text-xs sm:text-sm text-gray-600">{address.addressLine1}</p>
-                {address.addressLine2 && <p className="text-xs sm:text-sm text-gray-600">{address.addressLine2}</p>}
-                <p className="text-xs sm:text-sm text-gray-600">
+                <p className="text-xs sm:text-sm ">{address.addressLine1}</p>
+                {address.addressLine2 && <p className="text-xs sm:text-sm ">{address.addressLine2}</p>}
+                <p className="text-xs sm:text-sm ">
                   {address.city}, {address.state} {address.postalCode}
                 </p>
-                <p className="text-xs sm:text-sm text-gray-600">{address.country}</p>
-                <p className="text-xs sm:text-sm text-gray-600 mt-1">Phone: {address.phone || user.phone}</p>
+                <p className="text-xs sm:text-sm ">{address.country}</p>
+                <p className="text-xs sm:text-sm  mt-1">Phone: {address.phone || user.phone}</p>
               </div>
             ))}
           </div>
