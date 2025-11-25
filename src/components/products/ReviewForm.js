@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 import StarRating from '@/components/common/StarRating';
 
@@ -39,7 +40,7 @@ export default function ReviewForm({ productId, reviewToEdit, onReviewUpdated, o
         setShowForm(initialShowForm);
       }
     }
-  }, [reviewToEdit, initialShowForm]);
+  }, [reviewToEdit, initialShowForm, isEditing]);
 
   // Check if user has already reviewed this product
   useEffect(() => {
@@ -412,9 +413,11 @@ export default function ReviewForm({ productId, reviewToEdit, onReviewUpdated, o
               {images.map((image, index) => (
                 <div key={index} className="relative group">
                   <div className="relative h-24 w-24 rounded-lg overflow-hidden border-2 border-gray-200 hover:border-purple-400 transition-colors">
-                    <img
+                    <Image
                       src={image}
                       alt={`Review image ${index + 1}`}
+                      width={96}
+                      height={96}
                       className="h-full w-full object-cover"
                     />
                   </div>

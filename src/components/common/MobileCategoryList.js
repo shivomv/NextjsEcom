@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function MobileCategoryList({
   categories,
@@ -91,9 +92,11 @@ export default function MobileCategoryList({
                     : ''
                 }`}>
                   {category.image ? (
-                    <img
+                    <Image
                       src={category.image}
                       alt={category.name}
+                      width={32}
+                      height={32}
                       className="w-8 h-8 rounded-md object-cover"
                       onError={(e) => {
                         e.target.style.display = 'none';
@@ -140,9 +143,11 @@ export default function MobileCategoryList({
                           : ''
                       }`}>
                         {subcat.image ? (
-                          <img
+                          <Image
                             src={subcat.image}
                             alt={subcat.name}
+                            width={24}
+                            height={24}
                             className="w-6 h-6 rounded-md object-cover"
                             onError={(e) => {
                               e.target.style.display = 'none';

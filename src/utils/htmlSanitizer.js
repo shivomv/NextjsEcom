@@ -65,8 +65,10 @@ export function stripHtml(html) {
   return DOMPurify.sanitize(html, { ALLOWED_TAGS: [] });
 }
 
-export default {
+const htmlSanitizer = {
   sanitizeHtml,
   sanitizeUserHtml,
   stripHtml
 };
+
+export default htmlSanitizer;

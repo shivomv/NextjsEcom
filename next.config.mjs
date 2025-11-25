@@ -145,7 +145,7 @@ const nextConfig = {
 
   // Optimize page loading
   experimental: {
-    optimizeCss: true,
+    optimizeCss: false,
     optimizePackageImports: ['react-icons', '@heroicons/react'],
     serverActions: {
       bodySizeLimit: '2mb',
