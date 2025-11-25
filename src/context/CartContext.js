@@ -218,8 +218,7 @@ export const CartProvider = ({ children }) => {
     };
 
     fetchCart();
-  // Remove state.cartItems.length from dependencies to prevent infinite loops
-  }, [isAuthenticated, user, dispatch]);
+  }, [isAuthenticated, user, dispatch, state.cartItems.length]);
 
   // Save cart to API or localStorage whenever it changes - client-side only
   useEffect(() => {

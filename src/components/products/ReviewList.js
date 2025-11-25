@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import StarRating from '@/components/common/StarRating';
 import { useAuth } from '@/context/AuthContext';
 
@@ -10,7 +11,7 @@ export default function ReviewList({ productId, onEditReview, onReviewSubmitted 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/products/${productId}/reviews`);
@@ -28,7 +29,7 @@ export default function ReviewList({ productId, onEditReview, onReviewSubmitted 
     } finally {
       setLoading(false);
     }
-  };
+  }, [productId]);
 
   useEffect(() => {
     if (productId) {
@@ -39,7 +40,7 @@ export default function ReviewList({ productId, onEditReview, onReviewSubmitted 
   // Refresh reviews when onReviewSubmitted is called
   useEffect(() => {
     fetchReviews();
-  }, [onReviewSubmitted]);
+  }, [onReviewSubmitted, fetchReviews]);
 
   if (loading) {
     return (
@@ -132,9 +133,11 @@ export default function ReviewList({ productId, onEditReview, onReviewSubmitted 
             <div className="flex gap-2 mb-3 overflow-x-auto pb-2">
               {review.images.map((image, index) => (
                 <div key={index} className="relative flex-shrink-0 h-20 w-20 rounded-lg overflow-hidden border border-gray-200 hover:border-primary transition-colors cursor-pointer">
-                  <img
+                  <Image
                     src={image}
                     alt={`Review image ${index + 1}`}
+                    width={80}
+                    height={80}
                     className="h-full w-full object-cover hover:scale-110 transition-transform"
                   />
                 </div>
