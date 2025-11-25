@@ -22,18 +22,15 @@ export function createOptimizedContext(name, initialState, reducerFn, actions) {
     // Memoize action creators to prevent unnecessary re-renders
     const memoizedActions = useMemo(() => {
       const actionCreators = {};
-      
-      // Create memoized action creators
+
+      // Create action creators
       Object.keys(actions).forEach(actionName => {
-        actionCreators[actionName] = useCallback(
-          (...args) => {
-            const action = actions[actionName](...args);
-            dispatch(action);
-          },
-          [dispatch]
-        );
+        actionCreators[actionName] = (...args) => {
+          const action = actions[actionName](...args);
+          dispatch(action);
+        };
       });
-      
+
       return actionCreators;
     }, [dispatch]);
     
